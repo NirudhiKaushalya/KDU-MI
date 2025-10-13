@@ -113,6 +113,7 @@ const Header = ({ activeSection, onSectionChange, onLogout, patients = [], medic
     setShowSearchResults(results.length > 0);
   };
 
+  
   const handleSearchItemClick = (item) => {
     if (item.type === 'patient') {
       onSectionChange('patient-management');
