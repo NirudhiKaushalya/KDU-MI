@@ -1,0 +1,351 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.medicineStocks {
+  .card {
+    background: $card-light;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    @include card-shadow;
+    border: 1px solid $border-light;
+
+    .dark-mode & {
+      background: $card-dark;
+      box-shadow: $shadow-dark;
+      border-color: $border-dark;
+    }
+  }
+}
+
+.cardHeader {
+  @include flex-between;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid $border-light;
+
+  .dark-mode & {
+    border-color: $border-dark;
+  }
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+
+  .dark-mode & {
+    color: #e6e6e6;
+  }
+}
+
+.btn {
+  @include button-base;
+
+  &.btnPrimary {
+    background-color: $primary;
+    color: white;
+
+    &:hover {
+      background-color: $primary-dark;
+    }
+  }
+
+  &.btnSm {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+.flexBetween {
+  @include flex-between;
+}
+
+.mb20 {
+  margin-bottom: 20px;
+}
+
+.searchBar {
+  @include flex-center;
+  background: $card-light;
+  border-radius: 8px;
+  padding: 10px 20px;
+  width: 300px;
+  box-shadow: $shadow-light;
+  border: 1px solid $border-light;
+  position: relative;
+
+  .dark-mode & {
+    background: $card-dark;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: $border-dark;
+  }
+
+  input {
+    border: none;
+    outline: none;
+    padding: 8px;
+    width: 100%;
+    font-size: 16px;
+    background: transparent;
+
+    .dark-mode & {
+      color: #e6e6e6;
+    }
+  }
+
+  i {
+    color: $text-secondary;
+    margin-right: 10px;
+  }
+
+  .clearSearch {
+    position: absolute;
+    right: 15px;
+    background: none;
+    border: none;
+    color: $text-secondary;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      color: $text-primary;
+      background: rgba(0, 0, 0, 0.1);
+
+      .dark-mode & {
+        color: #e6e6e6;
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    .dark-mode & {
+      color: #9ca3af;
+    }
+  }
+}
+
+.formControl {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid $border-light;
+  border-radius: 8px;
+  font-size: 16px;
+  background: $card-light;
+  transition: border-color $transition-normal, box-shadow $transition-normal;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1), 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark-mode & {
+    background: $card-dark;
+    border-color: $border-dark;
+    color: #e6e6e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  .dark-mode &:focus {
+    border-color: $primary-light;
+    box-shadow: 0 0 0 3px rgba(58, 117, 217, 0.2), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.tableContainer {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid $border-light;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+
+  .dark-mode & {
+    border-color: $border-dark;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.medicineTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid $border-light;
+  }
+
+  .dark-mode & {
+    th, td {
+      border-color: $border-dark;
+    }
+  }
+
+  th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: $text-primary;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
+
+    .dark-mode & {
+      background-color: #374151;
+      color: #e6e6e6;
+      box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover {
+    background-color: #f8fafc;
+
+    .dark-mode & {
+      background-color: #374151;
+    }
+  }
+}
+
+.medicineId {
+  font-weight: 600;
+  color: $primary;
+  font-family: 'Courier New', monospace;
+}
+
+.medicineName {
+  .medicineInfo {
+    .name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .brand {
+      font-size: 12px;
+      color: $text-secondary;
+      
+      .dark-mode & {
+        color: #cbd5e1;
+      }
+    }
+  }
+}
+
+.expiryDate {
+  position: relative;
+  
+  .expiredBadge {
+    display: inline-block;
+    background-color: $danger;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-left: 8px;
+    font-weight: 600;
+  }
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.statusNormal {
+  background-color: #dcfce7;
+  color: #166534;
+
+  .dark-mode & {
+    background-color: #166534;
+    color: #dcfce7;
+  }
+}
+
+.statusWarning {
+  background-color: #fef3c7;
+  color: #92400e;
+
+  .dark-mode & {
+    background-color: #92400e;
+    color: #fef3c7;
+  }
+}
+
+.statusDanger {
+  background-color: #fee2e2;
+  color: #991b1b;
+
+  .dark-mode & {
+    background-color: #991b1b;
+    color: #fee2e2;
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.btnIcon {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-normal;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.btnUpdate {
+  background-color: $light-blue;
+  color: $text-primary;
+
+  &:hover {
+    background-color: #6cb4ee;
+    color: white;
+  }
+}
+
+.btnDelete {
+  background-color: #fee2e2;
+  color: #991b1b;
+
+  &:hover {
+    background-color: $danger;
+    color: white;
+  }
+
+  .dark-mode & {
+    background-color: #991b1b;
+    color: #fee2e2;
+
+    &:hover {
+      background-color: #dc2626;
+    }
+  }
+}

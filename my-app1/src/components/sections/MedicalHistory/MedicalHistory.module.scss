@@ -1,0 +1,210 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.medicalHistory {
+  background: #f8f9fa;
+  min-height: calc(100vh - 120px);
+}
+
+.pageHeader {
+  margin-bottom: 30px;
+  margin-top: 20px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.contentCard {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.sectionHeader {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.tableContainer {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.medicalRecordsTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 14px;
+  
+  th {
+    background: #f8f9fa;
+    color: #374151;
+    font-weight: 600;
+    padding: 16px 12px;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+    
+    &:first-child {
+      border-top-left-radius: 8px;
+    }
+    
+    &:last-child {
+      border-top-right-radius: 8px;
+    }
+  }
+  
+  th:last-child {
+    text-align: center;
+    width: 120px;
+    min-width: 120px;
+  }
+  
+  td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #1f2937;
+    vertical-align: middle;
+  }
+  
+  .tableRow {
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: #f8f9fa;
+    }
+    
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.recordNo {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.date {
+  color: #6b7280;
+}
+
+.consultedTime {
+  font-weight: 500;
+  color: #059669;
+}
+
+.diagnosis {
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.role {
+  color: #7c3aed;
+  font-weight: 500;
+}
+
+.actions {
+  text-align: center;
+  width: 120px;
+  min-width: 120px;
+}
+
+.viewButton {
+  background: #1e40af;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  
+  &:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .medicalHistory {
+    padding: 0;
+  }
+  
+  .contentCard {
+    padding: 20px;
+  }
+  
+  .pageTitle {
+    font-size: 24px;
+  }
+  
+  .sectionTitle {
+    font-size: 20px;
+  }
+  
+  .medicalRecordsTable {
+    font-size: 12px;
+    
+    th,
+    td {
+      padding: 12px 8px;
+    }
+  }
+  
+  .viewButton {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contentCard {
+    padding: 15px;
+  }
+  
+  .tableContainer {
+    border-radius: 6px;
+  }
+  
+  .medicalRecordsTable {
+    font-size: 11px;
+    
+    th,
+    td {
+      padding: 10px 6px;
+    }
+  }
+  
+  .viewButton {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+}

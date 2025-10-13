@@ -1,0 +1,364 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.patientManagement {
+  .card {
+    background: $card-light;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    border: 1px solid $border-light;
+
+    .dark-mode & {
+      background: $card-dark;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      border-color: $border-dark;
+    }
+  }
+}
+
+.cardHeader {
+  @include flex-between;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid $border-light;
+
+  .dark-mode & {
+    border-color: $border-dark;
+  }
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+
+  .dark-mode & {
+    color: #e6e6e6;
+  }
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &.btnPrimary {
+    background-color: $primary;
+    color: white;
+
+    &:hover {
+      background-color: $primary-dark;
+    }
+  }
+
+  &.btnSecondary {
+    background-color: #94a3b8;
+    color: white;
+
+    &:hover {
+      background-color: #64748b;
+    }
+  }
+}
+
+.flexBetween {
+  @include flex-between;
+}
+
+.mb20 {
+  margin-bottom: 20px;
+}
+
+.searchBar {
+  @include flex-center;
+  background: $card-light;
+  border-radius: 8px;
+  padding: 10px 20px;
+  width: 300px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid $border-light;
+  position: relative;
+
+  .dark-mode & {
+    background: $card-dark;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: $border-dark;
+  }
+
+  input {
+    border: none;
+    outline: none;
+    padding: 8px;
+    width: 100%;
+    font-size: 16px;
+    background: transparent;
+
+    .dark-mode & {
+      color: #e6e6e6;
+    }
+  }
+
+  i {
+    color: $text-secondary;
+    margin-right: 10px;
+  }
+
+  .clearSearch {
+    position: absolute;
+    right: 15px;
+    background: none;
+    border: none;
+    color: $text-secondary;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      color: $text-primary;
+      background: rgba(0, 0, 0, 0.1);
+
+      .dark-mode & {
+        color: #e6e6e6;
+        background: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    .dark-mode & {
+      color: #9ca3af;
+    }
+  }
+}
+
+.tableContainer {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid $border-light;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+
+  .dark-mode & {
+    border-color: $border-dark;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.patientTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid $border-light;
+  }
+
+  .dark-mode & {
+    th, td {
+      border-color: $border-dark;
+    }
+  }
+
+  th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: $text-primary;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
+
+    .dark-mode & {
+      background-color: #374151;
+      color: #e6e6e6;
+      box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover {
+    background-color: #f8fafc;
+
+    .dark-mode & {
+      background-color: #374151;
+    }
+  }
+}
+
+.patientId {
+  font-weight: 600;
+  color: $primary;
+  font-family: 'Courier New', monospace;
+}
+
+.lastVisit {
+  color: $text-secondary;
+  
+  .dark-mode & {
+    color: #cbd5e1;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.badgeOrange {
+  background-color: #ffedd5;
+  color: #9a3412;
+
+  .dark-mode & {
+    background-color: #9a3412;
+    color: #ffedd5;
+  }
+}
+
+.badgeWarning {
+  background-color: #fef3c7;
+  color: #92400e;
+
+  .dark-mode & {
+    background-color: #92400e;
+    color: #fef3c7;
+  }
+}
+
+.badgeLightBlue {
+  background-color: #e0f2fe;
+  color: #0c4a6e;
+
+  .dark-mode & {
+    background-color: #0c4a6e;
+    color: #e0f2fe;
+  }
+}
+
+.badgeSecondary {
+  background-color: #f1f5f9;
+  color: #475569;
+
+  .dark-mode & {
+    background-color: #475569;
+    color: #f1f5f9;
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.btnIcon {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.btnUpdate {
+  background-color: $light-blue;
+  color: $text-primary;
+
+  &:hover {
+    background-color: #6cb4ee;
+    color: white;
+  }
+}
+
+.btnDelete {
+  background-color: #fee2e2;
+  color: #991b1b;
+
+  &:hover {
+    background-color: $danger;
+    color: white;
+  }
+
+  .dark-mode & {
+    background-color: #991b1b;
+    color: #fee2e2;
+
+    &:hover {
+      background-color: #dc2626;
+    }
+  }
+}
+
+// New table column styles
+.role {
+  color: $text-secondary;
+  font-size: 14px;
+}
+
+.indexNo {
+  font-weight: 500;
+  color: $primary;
+  font-size: 14px;
+}
+
+.consultedDate {
+  color: $text-secondary;
+  font-size: 14px;
+}
+
+.consultedTime {
+  color: #059669;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.reason {
+  color: $text-secondary;
+  font-size: 14px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

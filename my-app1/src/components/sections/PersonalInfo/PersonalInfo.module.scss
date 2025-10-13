@@ -1,0 +1,304 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.personalInfo {
+  background: #f8f9fa;
+  min-height: calc(100vh - 120px);
+}
+
+.pageHeader {
+  margin-bottom: 30px;
+  margin-top: 20px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.contentCard {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cardTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.editButton {
+  background: #1e40af;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #1e3a8a;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.editButtons {
+  display: flex;
+  gap: 10px;
+}
+
+.saveButton {
+  background: #1e40af;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #1e3a8a;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.cancelButton {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.profileContent {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.profileSection {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.profilePicture {
+  flex-shrink: 0;
+}
+
+.profilePlaceholder {
+  width: 120px;
+  height: 120px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #e5e7eb;
+  
+  i {
+    font-size: 48px;
+    color: #9ca3af;
+  }
+}
+
+.userDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detailRow {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.detailLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.detailValue {
+  font-size: 16px;
+  font-weight: 400;
+  color: #374151;
+  flex: 1;
+  word-break: break-word;
+}
+
+.editInput,
+.editSelect,
+.editTextarea {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #374151;
+  background: white;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  }
+
+  &:hover {
+    border-color: #d1d5db;
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.editSelect {
+  cursor: pointer;
+}
+
+.editTextarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .personalInfo {
+    padding: 0;
+  }
+  
+  .contentCard {
+    padding: 20px;
+  }
+  
+  .pageTitle {
+    font-size: 24px;
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .cardTitle {
+    font-size: 20px;
+  }
+  
+  .editButtons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .editButton,
+  .saveButton,
+  .cancelButton {
+    width: 100%;
+    max-width: 120px;
+  }
+  
+  .profileSection {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .profilePlaceholder {
+    width: 100px;
+    height: 100px;
+    
+    i {
+      font-size: 40px;
+    }
+  }
+  
+  .userDetails {
+    width: 100%;
+  }
+  
+  .detailRow {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .detailLabel {
+    min-width: auto;
+    font-size: 14px;
+  }
+  
+  .detailValue {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contentCard {
+    padding: 15px;
+  }
+  
+  .profilePlaceholder {
+    width: 80px;
+    height: 80px;
+    
+    i {
+      font-size: 32px;
+    }
+  }
+  
+  .detailLabel,
+  .detailValue {
+    font-size: 13px;
+  }
+}

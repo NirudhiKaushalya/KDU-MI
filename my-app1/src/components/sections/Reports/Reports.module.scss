@@ -1,0 +1,309 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.reports {
+  .card {
+    background: $card-light;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    border: 1px solid $border-light;
+
+    .dark-mode & {
+      background: $card-dark;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      border-color: $border-dark;
+    }
+  }
+}
+
+.cardHeader {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid $border-light;
+
+  .dark-mode & {
+    border-color: $border-dark;
+  }
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+
+  .dark-mode & {
+    color: #e6e6e6;
+  }
+}
+
+.reportCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+
+  @include responsive(lg) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include responsive(md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reportCard {
+  background: $card-light;
+  border-radius: 12px;
+  padding: 25px;
+  border: 1px solid $border-light;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  height: 100%;
+  cursor: pointer;
+
+  .dark-mode & {
+    background: $card-dark;
+    border-color: $border-dark;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border-color: $primary;
+
+    .dark-mode & {
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+}
+
+.reportCardContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+}
+
+.reportIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  margin-bottom: 20px;
+}
+
+.iconEmoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.iconLightBlue {
+  background-color: #5dade2;
+}
+
+.iconGreen {
+  background-color: #27ae60;
+}
+
+.iconYellow {
+  background-color: #f39c12;
+}
+
+.iconRed {
+  background-color: #e74c3c;
+}
+
+.reportInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  
+  h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: 12px;
+    line-height: 1.3;
+
+    .dark-mode & {
+      color: #e6e6e6;
+    }
+  }
+
+  p {
+    font-size: 14px;
+    color: $text-secondary;
+    margin: 0;
+    line-height: 1.5;
+    flex: 1;
+
+    .dark-mode & {
+      color: #cbd5e1;
+    }
+  }
+}
+
+.tableContainer {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid $border-light;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+
+  .dark-mode & {
+    border-color: $border-dark;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.reportsTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid $border-light;
+  }
+
+  .dark-mode & {
+    th, td {
+      border-color: $border-dark;
+    }
+  }
+
+  th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: $text-primary;
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
+
+    .dark-mode & {
+      background-color: #374151;
+      color: #e6e6e6;
+      box-shadow: 0 2px 3px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover {
+    background-color: #f8fafc;
+
+    .dark-mode & {
+      background-color: #374151;
+    }
+  }
+}
+
+.reportName {
+  font-weight: 600;
+  color: $text-primary;
+
+  .dark-mode & {
+    color: #e6e6e6;
+  }
+}
+
+.generatedDate {
+  color: $text-secondary;
+  
+  .dark-mode & {
+    color: #cbd5e1;
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.btnIcon {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.btnView {
+  background-color: $light-blue;
+  color: $text-primary;
+
+  &:hover {
+    background-color: #6cb4ee;
+    color: white;
+  }
+}
+
+.btnDownload {
+  background-color: #dcfce7;
+  color: #166534;
+
+  &:hover {
+    background-color: $success;
+    color: white;
+  }
+
+  .dark-mode & {
+    background-color: #166534;
+    color: #dcfce7;
+
+    &:hover {
+      background-color: #059669;
+    }
+  }
+}
+
+.btnDelete {
+  background-color: #fef2f2;
+  color: #dc2626;
+
+  &:hover {
+    background-color: #ef4444;
+    color: white;
+  }
+
+  .dark-mode & {
+    background-color: #7f1d1d;
+    color: #fca5a5;
+
+    &:hover {
+      background-color: #dc2626;
+    }
+  }
+}

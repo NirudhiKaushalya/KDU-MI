@@ -1,0 +1,124 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.sidebar {
+  width: 280px;
+  height: 100vh;
+  background-color: #0d4680;
+  color: white;
+  padding: 20px 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  position: fixed;
+  left: 0;
+  top: 0;
+}
+
+.logo {
+  padding: 0 20px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+  text-align: center;
+
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+  }
+
+  p {
+    font-size: 12px;
+    opacity: 0.8;
+    font-weight: 300;
+  }
+}
+
+.menuSection {
+  margin-bottom: 25px;
+}
+
+.menuSectionTitle {
+  padding: 10px 20px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menuItem {
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &.active {
+    background-color: #1f71a8;
+    border-left-color: #f39c12;
+  }
+}
+
+.menuIcon {
+  margin-right: 15px;
+  width: 20px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+// Special highlight for Patient Management - icon only
+.patientManagementHighlight {
+  .menuIcon {
+    color: #87CEEB; // Light blue color
+    text-shadow: 0 0 12px rgba(135, 206, 235, 0.8), 0 0 20px rgba(135, 206, 235, 0.4);
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+  }
+  
+  &:hover {
+    .menuIcon {
+      color: #B0E0E6; // Slightly lighter blue on hover
+      text-shadow: 0 0 16px rgba(176, 224, 230, 1), 0 0 25px rgba(176, 224, 230, 0.6);
+      transform: scale(1.15);
+    }
+  }
+}
+
+.themeToggle {
+  position: absolute;
+  bottom: 30px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  i {
+    margin-right: 8px;
+    font-size: 16px;
+  }
+}

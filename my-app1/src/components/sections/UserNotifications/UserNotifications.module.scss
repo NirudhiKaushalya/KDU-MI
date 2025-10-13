@@ -1,0 +1,274 @@
+@import '../../../styles/variables';
+@import '../../../styles/mixins';
+
+.userNotifications {
+  background: #f8f9fa;
+  min-height: calc(100vh - 120px);
+}
+
+.notificationsHeader {
+  margin-bottom: 30px;
+  margin-top: 20px;
+  
+  .pageTitle {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e40af;
+    margin: 0;
+    line-height: 1.2;
+  }
+}
+
+.notificationsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  height: calc(100vh - 200px);
+}
+
+.notificationSection {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1;
+  min-height: 0;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.notificationList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.notificationCard {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+}
+
+.cardContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.notificationIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon {
+  font-size: 20px;
+}
+
+.notificationDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notificationTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.notificationDescription {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notificationTimestamp {
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .userNotifications {
+    padding: 0;
+  }
+  
+  .notificationsHeader .pageTitle {
+    font-size: 24px;
+  }
+  
+  .notificationCard {
+    padding: 15px;
+  }
+  
+  .cardContent {
+    gap: 12px;
+  }
+  
+  .notificationIcon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .icon {
+    font-size: 18px;
+  }
+  
+  .notificationTitle {
+    font-size: 15px;
+  }
+  
+  .notificationDescription {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .notificationsHeader {
+    margin-bottom: 20px;
+  }
+  
+  .notificationsContent {
+    gap: 20px;
+  }
+  
+  .notificationSection {
+    gap: 12px;
+  }
+  
+  .sectionTitle {
+    font-size: 16px;
+  }
+  
+  .notificationList {
+    gap: 10px;
+  }
+  
+  .notificationCard {
+    padding: 12px;
+  }
+  
+  .cardContent {
+    gap: 10px;
+  }
+  
+  .notificationIcon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .icon {
+    font-size: 16px;
+  }
+  
+  .notificationTitle {
+    font-size: 14px;
+  }
+  
+  .notificationDescription {
+    font-size: 12px;
+  }
+  
+  .notificationTimestamp {
+    font-size: 11px;
+  }
+}
+
+.notificationActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.markReadButton {
+  background: none;
+  border: none;
+  color: #10b981;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #059669;
+    background: #d1fae5;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #6b7280;
+    background: #f3f4f6;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
