@@ -172,7 +172,7 @@ const Registration = ({ onBackToLogin, onRegister }) => {
           <button className={styles.closeButton} onClick={onBackToLogin}>
             <i className="fas fa-times"></i>
           </button>
-          <h2 className={styles.welcomeText}>Welcome</h2>
+          <h2 className={styles.welcomeText}>Welcome to</h2>
           <h1 className={styles.brandTitle}>KDU Medical Inspection Unit</h1>
         </div>
         
@@ -401,7 +401,7 @@ const Registration = ({ onBackToLogin, onRegister }) => {
               </div>
 
               <div className={styles.inputGroup}>
-                <label htmlFor="reTypePassword" className={styles.inputLabel}>Re-Type Password:</label>
+                <label htmlFor="reTypePassword" className={styles.inputLabel}>Confirm Password:</label>
                 <input
                   type="password"
                   id="reTypePassword"

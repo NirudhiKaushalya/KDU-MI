@@ -48,8 +48,14 @@ export const NotificationProvider = ({ children }) => {
         }
         
         // For success notifications, allow them to show (no deduplication)
-        if (newNotification.category === 'success' || newNotification.category === 'patient') {
+        if (newNotification.category === 'success') {
           return false;
+        }
+        
+        // For patient notifications, check for duplicates based on title and timing
+        if (newNotification.category === 'patient') {
+          return existing.title === newNotification.title && 
+                 Math.abs(new Date(existing.timestamp) - new Date(newNotification.timestamp)) < 5000; // Within 5 seconds
         }
         
         // For other notifications, check title, description and timing

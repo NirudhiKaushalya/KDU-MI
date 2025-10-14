@@ -14,12 +14,15 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
     reasonForConsultation: '',
     consultedDate: '',
     consultedTime: '',
-    prescribedMedicines: []
+    prescribedMedicines: [],
+    labReports: null
   });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (patient) {
+      console.log('Patient data:', patient);
+      console.log('Patient labReports:', patient.labReports);
       setFormData({
         id: patient.id || '',
         indexNo: patient.indexNo || '',
@@ -33,9 +36,9 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
         consultedDate: patient.consultedDate || patient.admittedDate || '',
         consultedTime: patient.consultedTime || '10:30 AM',
         prescribedMedicines: patient.prescribedMedicines || [
-          { name: 'Paracetamol', quantity: '10' },
-          { name: 'Amoxicillin', quantity: '12' }
-        ]
+          { name: 'vitamin c', quantity: '10' }
+        ],
+        labReports: patient.labReports || null
       });
     }
   }, [patient]);
@@ -83,6 +86,19 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
         ...prev,
         [name]: ''
       }));
+    }
+  };
+
+  const handleViewLabReport = (file) => {
+    // Create a URL for the file and open it in a new tab
+    if (file instanceof File) {
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+      // Clean up the URL after a delay to free memory
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else if (file.url) {
+      // If file has a URL property (for stored files)
+      window.open(file.url, '_blank');
     }
   };
 
@@ -218,6 +234,38 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
                     ))}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Lab Reports Section */}
+              <div className={styles.labReportsSection}>
+                <h3 className={styles.sectionTitle}>Lab Reports</h3>
+                <div className={styles.labReportsContainer}>
+                  {/* Debug info */}
+                  {console.log('FormData labReports:', formData.labReports)}
+                  {console.log('FormData labReports length:', formData.labReports?.length)}
+                  {formData.labReports && formData.labReports.length > 0 ? (
+                    <div className={styles.labReportsList}>
+                      {formData.labReports.map((file, index) => (
+                        <div key={index} className={styles.labReportItem}>
+                          <span className={styles.fileIcon}>📄</span>
+                          <span className={styles.fileName}>{file.name}</span>
+                          <button 
+                            type="button"
+                            className={styles.viewFileButton}
+                            onClick={() => handleViewLabReport(file)}
+                            title="View lab report"
+                          >
+                            👁 View
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.noLabReports}>
+                      <span>No lab reports uploaded</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : (

@@ -67,6 +67,28 @@
   position: relative;
 }
 
+.welcomeText {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #1e40af, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brandTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+  letter-spacing: 0.5px;
+}
+
 .closeButton {
   position: absolute;
   top: 0;

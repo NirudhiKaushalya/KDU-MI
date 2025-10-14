@@ -2,44 +2,24 @@ import React, { useState } from 'react';
 import styles from './MedicalHistory.module.scss';
 import MedicalRecordModal from '../../modals/MedicalRecordModal/MedicalRecordModal';
 
-const MedicalHistory = ({ userName = 'User' }) => {
+const MedicalHistory = ({ userName = 'User', patients = [] }) => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showModal, setShowModal] = useState(false);
   
-  const medicalRecords = [
-    {
-      id: 1,
-      recordNo: 'REC001',
-      date: '2023-10-27',
-      consultedTime: '09:30',
-      diagnosis: 'Hypertension',
-      role: 'Doctor'
-    },
-    {
-      id: 2,
-      recordNo: 'REC002',
-      date: '2023-09-15',
-      consultedTime: '14:15',
-      diagnosis: 'Diabetes',
-      role: 'Nurse'
-    },
-    {
-      id: 3,
-      recordNo: 'REC003',
-      date: '2023-08-01',
-      consultedTime: '11:45',
-      diagnosis: 'Common Cold',
-      role: 'Doctor'
-    },
-    {
-      id: 4,
-      recordNo: 'REC004',
-      date: '2023-06-20',
-      consultedTime: '16:20',
-      diagnosis: 'Fever',
-      role: 'Nurse'
-    }
-  ];
+  // Convert patients to medical records format
+  const medicalRecords = patients.map((patient, index) => ({
+    id: patient.id,
+    recordNo: patient.indexNo,
+    date: patient.admittedDate || patient.consultedDate || '',
+    consultedTime: patient.admittedTime || patient.consultedTime || '',
+    diagnosis: patient.medicalCondition || patient.condition || '',
+    role: 'Doctor',
+    patientName: `${patient.firstName} ${patient.lastName}`,
+    labReports: patient.labReports || null,
+    prescribedMedicines: patient.prescribedMedicines || [],
+    additionalNotes: patient.additionalNotes || '',
+    reasonForConsultation: patient.reason || patient.reasonForConsultation || ''
+  }));
 
   const handleRecordClick = (record) => {
     setSelectedRecord(record);
@@ -67,18 +47,30 @@ const MedicalHistory = ({ userName = 'User' }) => {
           <table className={styles.medicalRecordsTable}>
             <thead>
               <tr>
-                <th>Record No</th>
+                <th>Patient</th>
+                <th>Index No</th>
                 <th>Consulted Date</th>
-                <th>Consulted Time</th>
+                <th>Condition</th>
+                <th>Lab Reports</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {medicalRecords.map((record) => (
                 <tr key={record.id} className={styles.tableRow}>
+                  <td className={styles.patientName}>{record.patientName}</td>
                   <td className={styles.recordNo}>#{record.recordNo}</td>
                   <td className={styles.date}>{record.date}</td>
-                  <td className={styles.consultedTime}>{record.consultedTime}</td>
+                  <td className={styles.condition}>{record.diagnosis}</td>
+                  <td className={styles.labReports}>
+                    {record.labReports && record.labReports.length > 0 ? (
+                      <span className={styles.labReportsIndicator}>
+                        📄 {record.labReports.length} file(s)
+                      </span>
+                    ) : (
+                      <span className={styles.noReports}>No reports</span>
+                    )}
+                  </td>
                   <td className={styles.actions}>
                     <button 
                       className={styles.viewButton}

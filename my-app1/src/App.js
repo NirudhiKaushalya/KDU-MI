@@ -183,6 +183,40 @@ const AppContent = () => {
         medicine.id === updatedMedicine.id ? updatedMedicine : medicine
       );
       
+      // Detect what fields were changed
+      const changes = [];
+      if (oldMedicine?.medicineName !== updatedMedicine.medicineName) {
+        changes.push(`name: "${oldMedicine?.medicineName}" → "${updatedMedicine.medicineName}"`);
+      }
+      if (oldMedicine?.category !== updatedMedicine.category) {
+        changes.push(`category: "${oldMedicine?.category}" → "${updatedMedicine.category}"`);
+      }
+      if (oldMedicine?.brand !== updatedMedicine.brand) {
+        changes.push(`brand: "${oldMedicine?.brand}" → "${updatedMedicine.brand}"`);
+      }
+      if (oldMedicine?.quantity !== updatedMedicine.quantity) {
+        changes.push(`quantity: ${oldMedicine?.quantity} → ${updatedMedicine.quantity}`);
+      }
+      if (oldMedicine?.lowStockThreshold !== updatedMedicine.lowStockThreshold) {
+        changes.push(`threshold: ${oldMedicine?.lowStockThreshold} → ${updatedMedicine.lowStockThreshold}`);
+      }
+      if (oldMedicine?.expiryDate !== updatedMedicine.expiryDate) {
+        changes.push(`expiry date: ${oldMedicine?.expiryDate} → ${updatedMedicine.expiryDate}`);
+      }
+
+      // Add notification for medicine update
+      const changeDescription = changes.length > 0 
+        ? `Updated: ${changes.join(', ')}`
+        : 'Medicine information updated successfully';
+        
+      addNotification({
+        type: 'success',
+        icon: '✏️',
+        title: 'Medicine Updated',
+        description: `${updatedMedicine.medicineName} - ${changeDescription}`,
+        category: 'medicine'
+      });
+      
       // Add activity tracking
       addActivity({
         type: 'medicine',
@@ -239,6 +273,15 @@ const AppContent = () => {
             quantity: medicineToDelete.quantity,
             category: medicineToDelete.category
           }
+        });
+        
+        // Add notification for medicine deletion
+        addNotification({
+          type: 'warning',
+          icon: '🗑️',
+          title: 'Medicine Removed',
+          description: `${medicineToDelete.medicineName} has been removed from the medicine stock.`,
+          category: 'medicine'
         });
       }
       
@@ -316,6 +359,9 @@ const AppContent = () => {
     }
 
     // Create a new patient record from the admission form data
+    console.log('Received patient data in handleAdmitPatient:', patientData);
+    console.log('Lab reports in patient data:', patientData.labReports);
+    
     const newPatient = {
       id: patientData.id || `P${Date.now()}`, // Use provided ID or generate one
       indexNo: patientData.indexNo,
@@ -332,6 +378,9 @@ const AppContent = () => {
       labReports: patientData.labReports || null,
       additionalNotes: patientData.additionalNotes || ''
     };
+    
+    console.log('Created new patient:', newPatient);
+    console.log('New patient lab reports:', newPatient.labReports);
     
     setPatients(prev => [...prev, newPatient]);
     
@@ -374,7 +423,37 @@ const AppContent = () => {
   };
 
   const handleDeletePatient = (patientId) => {
-    setPatients(prev => prev.filter(patient => patient.id !== patientId));
+    setPatients(prev => {
+      const patientToDelete = prev.find(p => p.id === patientId);
+      const updatedPatients = prev.filter(patient => patient.id !== patientId);
+      
+      // Add notification for patient deletion
+      if (patientToDelete) {
+        addNotification({
+          type: 'warning',
+          icon: '👤',
+          title: 'Patient Removed',
+          description: `Patient record removed - Index: ${patientToDelete.indexNo}, Consulted: ${patientToDelete.consultedDate || patientToDelete.admittedDate || 'N/A'}`,
+          category: 'patient'
+        });
+        
+        // Add activity tracking
+        addActivity({
+          type: 'patient',
+          action: 'deleted',
+          title: 'Patient Deleted',
+          description: `Patient ${patientToDelete.indexNo} - ${patientToDelete.firstName} ${patientToDelete.lastName} removed from system`,
+          icon: '🗑️',
+          details: {
+            patientName: `${patientToDelete.firstName} ${patientToDelete.lastName}`,
+            indexNo: patientToDelete.indexNo,
+            condition: patientToDelete.condition
+          }
+        });
+      }
+      
+      return updatedPatients;
+    });
   };
 
   const handleAddReport = (report) => {
@@ -497,7 +576,8 @@ const AppContent = () => {
           <div className="main-content">
             <div className="content-wrapper">
               <UserHeader 
-                userName={userName} 
+                userName={userName}
+                userData={userData}
                 notificationCount={getNewNotificationsCount()}
                 onNavigateToNotifications={() => handleSectionChange('notifications')}
                 onNavigateToProfile={() => handleSectionChange('personal-info')}
@@ -508,7 +588,7 @@ const AppContent = () => {
                 {activeSection === 'dashboard' && <UserDashboard userName={userName} />}
                 {activeSection === 'notifications' && <UserNotifications />}
                 {activeSection === 'personal-info' && <PersonalInfo userName={userName} userData={userData} />}
-                {activeSection === 'medical-history' && <MedicalHistory userName={userName} />}
+                {activeSection === 'medical-history' && <MedicalHistory userName={userName} patients={patients} />}
               </div>
             </div>
             

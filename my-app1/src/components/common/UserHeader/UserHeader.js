@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './UserHeader.module.scss';
 
-const UserHeader = ({ userName = 'User', notificationCount = 0, onNavigateToNotifications, onNavigateToProfile, onLogout }) => {
+const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0, onNavigateToNotifications, onNavigateToProfile, onLogout }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -58,7 +58,15 @@ const UserHeader = ({ userName = 'User', notificationCount = 0, onNavigateToNoti
               onClick={handleAvatarClick}
               title="User menu"
             >
-              <span className={styles.avatarText}>{userName.charAt(0).toUpperCase()}</span>
+              {(userData?.photoPreview || userData?.photoData?.data) ? (
+                <img 
+                  src={userData.photoPreview || userData.photoData.data} 
+                  alt="Profile" 
+                  className={styles.avatarImage}
+                />
+              ) : (
+                <span className={styles.avatarText}>{userName.charAt(0).toUpperCase()}</span>
+              )}
             </div>
             <span className={styles.userName}>{userName}</span>
             

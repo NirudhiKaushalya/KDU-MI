@@ -567,3 +567,79 @@
     }
   }
 }
+
+// Lab Reports Section Styles
+.labReportsSection {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.labReportsContainer {
+  margin-top: 12px;
+}
+
+.labReportsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.labReportItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+}
+
+.fileIcon {
+  font-size: 16px;
+  color: #dc2626;
+}
+
+.fileName {
+  flex: 1;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.viewFileButton {
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #2563eb;
+  }
+}
+
+.noLabReports {
+  padding: 20px;
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  background: white;
+}

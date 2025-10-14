@@ -52,7 +52,24 @@ exports.deletePatient = async (req, res) => {
     try{
         const deleted = await Patient.findByIdAndDelete(req.params.id);
         if(!deleted) return res.status(404).json({message:"Patient not found"});
-        res.json({message:"Patient deleted"});
+        
+        // Create notification for patient deletion
+        const Notification = require("../models/notification");
+        const notification = new Notification({
+            notificationID: Date.now(),
+            patientID: req.params.id,
+            message: `Patient record removed`,
+            type: 'patient_deleted',
+            category: 'patient'
+        });
+        await notification.save();
+        
+        res.json({
+            message: "Patient deleted",
+            notification: {
+                message: "Patient deleted and notification sent"
+            }
+        });
     }catch (error) {
         res.status(500).json({message: error.message});
     }

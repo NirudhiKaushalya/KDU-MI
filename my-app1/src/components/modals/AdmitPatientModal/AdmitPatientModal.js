@@ -93,6 +93,12 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
       ...prev,
       labReports: prev.labReports.filter((_, index) => index !== indexToRemove)
     }));
+    
+    // Clear the file input to allow re-uploading the same file
+    const fileInput = document.getElementById('labReports');
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const handleSubmit = (e) => {
@@ -105,6 +111,8 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
     }
     
     if (onAdmitPatient) {
+      console.log('Admitting patient with formData:', formData);
+      console.log('Lab reports in formData:', formData.labReports);
       onAdmitPatient(formData);
     }
     
@@ -119,6 +127,12 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
       prescribedMedicines: [],
       additionalNotes: ''
     });
+    
+    // Clear file input
+    const fileInput = document.getElementById('labReports');
+    if (fileInput) {
+      fileInput.value = '';
+    }
     
     // Close modal
     onClose();

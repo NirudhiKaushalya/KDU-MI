@@ -44,8 +44,26 @@ exports.updateMedicalRecord = async (req, res) => {
             req.body,
             {new: true}
         );
-        if(!updated) return res.status(404).json({message: "User not found"});
-        res.json(updated);
+        if(!updated) return res.status(404).json({message: "MedicalRecord not found"});
+        
+        // Create notification for medical record update
+        const Notification = require("../models/notification");
+        const notification = new Notification({
+            notificationID: Date.now(),
+            medicalRecordID: req.params.id,
+            patientID: updated.patientID,
+            message: `Medical record for patient ${updated.patientID} has been updated`,
+            type: 'medical_record_updated',
+            category: 'medical-record'
+        });
+        await notification.save();
+        
+        res.json({
+            medicalRecord: updated,
+            notification: {
+                message: "Medical record updated and notification sent"
+            }
+        });
     } catch (error) {
         res.status(400).json({message:error.message});
     }
@@ -56,7 +74,25 @@ exports.deleteMedicalRecord = async (req, res) => {
     try{
         const deleted = await MedicalRecord.findByIdAndDelete(req.params.id);
         if(!deleted) return res.status(404).json({message:"MedicalRecord not found"});
-        res.json({message:"MedicalRecord deleted"});
+        
+        // Create notification for medical record deletion
+        const Notification = require("../models/notification");
+        const notification = new Notification({
+            notificationID: Date.now(),
+            medicalRecordID: req.params.id,
+            patientID: deleted.patientID,
+            message: `Medical record for patient ${deleted.patientID} has been deleted`,
+            type: 'medical_record_deleted',
+            category: 'medical-record'
+        });
+        await notification.save();
+        
+        res.json({
+            message: "MedicalRecord deleted",
+            notification: {
+                message: "Medical record deleted and notification sent"
+            }
+        });
     }catch (error) {
         res.status(500).json({message: error.message});
     }

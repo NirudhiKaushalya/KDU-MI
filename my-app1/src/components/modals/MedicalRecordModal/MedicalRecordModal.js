@@ -24,6 +24,19 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     }));
   };
 
+  const handleViewLabReport = (file) => {
+    // Create a URL for the file and open it in a new tab
+    if (file instanceof File) {
+      const url = URL.createObjectURL(file);
+      window.open(url, '_blank');
+      // Clean up the URL after a delay to free memory
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else if (file.url) {
+      // If file has a URL property (for stored files)
+      window.open(file.url, '_blank');
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -235,19 +248,48 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
 
               <div className={styles.formField}>
                 <label className={styles.fieldLabel}>Lab Reports:</label>
-                <div className={styles.fileUploadWrapper}>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => handleInputChange('labReports', e.target.files[0])}
-                    className={styles.fileInput}
-                    id="labReports"
-                  />
-                  <label htmlFor="labReports" className={styles.fileUploadLabel}>
-                    <span className={styles.uploadIcon}>📄</span>
-                    Upload PDFs
-                  </label>
-                </div>
+                {isEditMode ? (
+                  // View mode - show uploaded lab reports
+                  <div className={styles.labReportsView}>
+                    {formData.labReports && formData.labReports.length > 0 ? (
+                      <div className={styles.labReportsList}>
+                        {formData.labReports.map((file, index) => (
+                          <div key={index} className={styles.labReportItem}>
+                            <span className={styles.fileIcon}>📄</span>
+                            <span className={styles.fileName}>{file.name}</span>
+                            <button 
+                              type="button"
+                              className={styles.viewFileButton}
+                              onClick={() => handleViewLabReport(file)}
+                              title="View lab report"
+                            >
+                              👁 View
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={styles.noLabReports}>
+                        <span>No lab reports uploaded</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Edit mode - file upload
+                  <div className={styles.fileUploadWrapper}>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleInputChange('labReports', e.target.files[0])}
+                      className={styles.fileInput}
+                      id="labReports"
+                    />
+                    <label htmlFor="labReports" className={styles.fileUploadLabel}>
+                      <span className={styles.uploadIcon}>📄</span>
+                      Upload PDFs
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           </div>

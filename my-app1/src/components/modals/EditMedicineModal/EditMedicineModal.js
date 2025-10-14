@@ -17,7 +17,7 @@ const EditMedicineModal = ({ isOpen, onClose, medicine, onUpdateMedicine }) => {
     if (medicine) {
       setFormData({
         id: medicine.id || '',
-        name: medicine.name || '',
+        name: medicine.medicineName || medicine.name || '',
         category: medicine.category || '',
         brand: medicine.brand || '',
         quantity: medicine.quantity || '',
@@ -91,6 +91,7 @@ const EditMedicineModal = ({ isOpen, onClose, medicine, onUpdateMedicine }) => {
 
       const updatedMedicine = {
         ...formData,
+        medicineName: formData.name, // Map name to medicineName for consistency
         quantity: parseInt(formData.quantity),
         lowStockThreshold: parseInt(formData.lowStockThreshold),
         stockLevel: stockLevel

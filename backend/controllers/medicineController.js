@@ -52,7 +52,24 @@ exports.deleteMedicine = async (req, res) => {
     try{
         const deleted = await Medicine.findByIdAndDelete(req.params.id);
         if(!deleted) return res.status(404).json({message:"Medicine not found"});
-        res.json({message:"Medicine deleted"});
+        
+        // Create notification for medicine deletion
+        const Notification = require("../models/notification");
+        const notification = new Notification({
+            notificationID: Date.now(),
+            medicineID: req.params.id,
+            message: `Medicine "${deleted.name}" has been removed from stock`,
+            type: 'medicine_deleted',
+            category: 'medicine'
+        });
+        await notification.save();
+        
+        res.json({
+            message: "Medicine deleted",
+            notification: {
+                message: "Medicine deleted and notification sent"
+            }
+        });
     }catch (error) {
         res.status(500).json({message: error.message});
     }
