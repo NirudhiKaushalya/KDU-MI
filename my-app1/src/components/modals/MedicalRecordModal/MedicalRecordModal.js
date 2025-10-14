@@ -28,16 +28,7 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     e.preventDefault();
     onSave(formData);
     
-    // Add notification for new medical record
-    if (!isEditMode) {
-      addNotification({
-        type: 'info',
-        icon: '📋',
-        title: 'New Medical Record Created',
-        description: `Medical record created for patient ${formData.indexNo} - ${formData.medicalCondition}`,
-        category: 'medical-record'
-      });
-    }
+    // Medical record created successfully (notification handled by patient admission flow)
     
     onClose();
   };

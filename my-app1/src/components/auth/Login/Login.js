@@ -30,8 +30,8 @@ const Login = ({ onLogin, onShowRegistration, onShowForgotPassword }) => {
       // Determine user type based on role
       const userType = user.role === 'admin' ? 'admin' : 'user';
       
-      // Call parent onLogin function with correct user type
-      onLogin(true, userType, user.username);
+      // Call parent onLogin function with correct user type and complete user data
+      onLogin(true, userType, user.username, user);
 
     } catch (err) {
       console.error(err);

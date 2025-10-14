@@ -6,20 +6,9 @@ exports.createMedicalRecord = async (req, res) => {
         const medicalRecord = new MedicalRecord(req.body);
         await medicalRecord.save();
         
-        // Create notification for new medical record
-        const Notification = require("../models/notification");
-        const notification = new Notification({
-            notificationID: Date.now(),
-            patientID: medicalRecord.patientID,
-            message: `New medical record created for patient ${medicalRecord.patientID} - Diagnosis: ${medicalRecord.Diagnosis}`
-        });
-        await notification.save();
-        
         res.status(201).json({
             medicalRecord,
-            notification: {
-                message: "Medical record created and notification sent"
-            }
+            message: "Medical record created successfully"
         });
         } catch (error) {
             res.status(400).json({ message: error.message});

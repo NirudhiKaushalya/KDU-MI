@@ -6,8 +6,6 @@
   - Frontend: `cd my-app1` then `npm install` then `npm start` (runs on :3000 via CRA).
   - Backend: `cd backend` then `npm install` then `npm run dev` (nodemon server.js, default port 8000). Backend reads env from `backend/.env` (MONGO_URI, PORT, JWT_SECRET).
 
-
-
 - Architecture summary (quick)
   - Frontend: Create React App, React 19, SCSS with CSS modules. Components are organized under `src/components/{auth,common,modals,sections}`. State/side-effect context providers live in `src/contexts` (e.g., `NotificationContext.js`, `SettingsContext.js`). Data persistence in frontend README asserts localStorage usage — however the repository also contains a backend API; when integrating, frontend uses `axios` to call `http://localhost:8000/api/...`.
   - Backend: Express server in `backend/server.js` wires route modules (`routes/*.js`) under `/api/*`. Models use Mongoose schemas in `backend/models/*.js`. Controllers live in `backend/controllers/*Controller.js` and perform CRUD using Mongoose.

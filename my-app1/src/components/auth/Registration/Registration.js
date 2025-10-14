@@ -10,6 +10,7 @@ const Registration = ({ onBackToLogin, onRegister }) => {
     email: '',
     contactNo: '',
     role: 'Dayscholar',
+    department: '',
     intake: '',
     password: '',
     reTypePassword: ''
@@ -112,6 +113,10 @@ const Registration = ({ onBackToLogin, onRegister }) => {
       newErrors.contactNo = 'Contact number is required';
     }
 
+    if (!formData.department.trim()) {
+      newErrors.department = 'Department is required';
+    }
+
     if (formData.role === 'Dayscholar' && !formData.intake.trim()) {
       newErrors.intake = 'Intake is required for Dayscholar';
     }
@@ -137,21 +142,23 @@ const Registration = ({ onBackToLogin, onRegister }) => {
     
     if (validateForm()) {
       // Here you would typically send the data to a backend
-      console.log('Registration data:', { 
+      const registrationData = { 
         ...formData, 
         photoFile: photoFile ? {
           name: photoFile.name,
           size: photoFile.size,
           type: photoFile.type
-        } : null
-      });
+        } : null,
+        photoPreview: photoPreview // Include the base64 photo data
+      };
+      console.log('Registration data:', registrationData);
       
       // For demo purposes, we'll just show a success message
       alert('Registration successful! You can now login with your credentials.');
       
       // Navigate back to login
       if (onRegister) {
-        onRegister(formData);
+        onRegister(registrationData);
       } else {
         onBackToLogin();
       }
@@ -330,9 +337,28 @@ const Registration = ({ onBackToLogin, onRegister }) => {
                 >
                   <option value="Dayscholar">Dayscholar</option>
                   <option value="Officer Cadet">Officer Cadet</option>
-                  <option value="Staff">Staff</option>
                   <option value="Other">Other</option>
                 </select>
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="department" className={styles.inputLabel}>Department:</label>
+                <select
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  className={`${styles.selectField} ${errors.department ? styles.errorField : ''}`}
+                >
+                  <option value="">Select Department</option>
+                  <option value="Department of Architecture">Department of Architecture</option>
+                  <option value="Department of Spatial Science">Department of Spatial Science</option>
+                  <option value="Department of Quantity Survey">Department of Quantity Survey</option>
+                  <option value="Department of IQM">Department of IQM</option>
+                  <option value="Department of IT">Department of IT</option>
+                  <option value="Other">Other</option>
+                </select>
+                {errors.department && <span className={styles.errorText}>{errors.department}</span>}
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import styles from './PersonalInfo.module.scss';
 
-const PersonalInfo = ({ userName }) => {
+const PersonalInfo = ({ userName, userData: propUserData }) => {
   const { addNotification } = useNotifications();
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -12,10 +12,19 @@ const PersonalInfo = ({ userName }) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const setupUserData = async () => {
       try {
+        // If we have user data from props (from registration), use it
+        if (propUserData) {
+          console.log("Using user data from registration:", propUserData);
+          setUserData(propUserData);
+          setEditData(propUserData);
+          setLoading(false);
+          return;
+        }
+
+        // Otherwise, try to fetch from API
         console.log("Fetching user data for:", userName);
-        // Try to fetch user data - if API fails, use mock data for demo
         try {
           const response = await axios.get(`http://localhost:8000/api/user/getByEmail/${userName}`);
           console.log("API Response:", response.data);
@@ -32,8 +41,10 @@ const PersonalInfo = ({ userName }) => {
             email: userName || 'demo@example.com',
             contactNo: '+1 234 567 890',
             role: 'Dayscholar',
+            department: 'Department of IT',
             intake: 'Fall 2023',
-            additionalNotes: 'Allergic to penicillin.'
+            additionalNotes: 'Allergic to penicillin.',
+            photoPreview: null // No photo in mock data
           };
           setUserData(mockData);
           setEditData(mockData);
@@ -47,11 +58,11 @@ const PersonalInfo = ({ userName }) => {
     };
 
     if (userName) {
-      fetchUserData();
+      setupUserData();
     } else {
       setLoading(false);
     }
-  }, [userName]);
+  }, [userName, propUserData]);
 
 
   const handleEditClick = () => setIsEditing(true);
@@ -133,9 +144,17 @@ const PersonalInfo = ({ userName }) => {
         <div className={styles.profileContent}>
           <div className={styles.profileSection}>
             <div className={styles.profilePicture}>
-              <div className={styles.profilePlaceholder}>
-                <i className="fas fa-user"></i>
-              </div>
+              {(userData?.photoPreview || userData?.photoData?.data) ? (
+                <img 
+                  src={userData.photoPreview || userData.photoData.data} 
+                  alt="Profile" 
+                  className={styles.profileImage}
+                />
+              ) : (
+                <div className={styles.profilePlaceholder}>
+                  <i className="fas fa-user"></i>
+                </div>
+              )}
             </div>
             
             <div className={styles.userDetails}>
@@ -202,12 +221,36 @@ const PersonalInfo = ({ userName }) => {
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Department:</span>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <select
+                    value={editData.department || ''}
+                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    className={styles.editSelect}
+                  >
+                    <option value="">Select Department</option>
+                    <option value="Department of Architecture">Department of Architecture</option>
+                    <option value="Department of Spatial Science">Department of Spatial Science</option>
+                    <option value="Department of Quantity Survey">Department of Quantity Survey</option>
+                    <option value="Department of IQM">Department of IQM</option>
+                    <option value="Department of IT">Department of IT</option>
+                    <option value="Other">Other</option>
+                  </select>
+                ) : (
+                  <span className={styles.detailValue}>{userData.department || 'N/A'}</span>
+                )}
+              </div>
+
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Role:</span>
+                {isEditing ? (
+                  <select
                     value={editData.role || ''}
                     onChange={(e) => handleInputChange('role', e.target.value)}
-                    className={styles.editInput}
-                  />
+                    className={styles.editSelect}
+                  >
+                    <option value="Dayscholar">Dayscholar</option>
+                    <option value="Officer Cadet">Officer Cadet</option>
+                    <option value="Other">Other</option>
+                  </select>
                 ) : (
                   <span className={styles.detailValue}>{userData.role || 'N/A'}</span>
                 )}

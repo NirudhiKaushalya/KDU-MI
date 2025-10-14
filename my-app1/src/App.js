@@ -31,6 +31,7 @@ const AppContent = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState(null); // 'admin' or 'user'
   const [userName, setUserName] = useState('');
+  const [userData, setUserData] = useState(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -75,10 +76,18 @@ const AppContent = () => {
   }, [medicines, checkStockAlerts]);
 
 
-  const handleLogin = (success, type = null, name = '') => {
+  const handleLogin = (success, type = null, name = '', loginUserData = null) => {
     setIsAuthenticated(success);
     setUserType(type);
-    setUserName(name);
+    // Format the username properly
+    const formattedName = name ? name.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ') : '';
+    setUserName(formattedName);
+    // Store user data if provided from login
+    if (loginUserData) {
+      setUserData(loginUserData);
+    }
     if (success) {
       setPreviousSection('dashboard');
       setActiveSection('dashboard');
@@ -100,11 +109,26 @@ const AppContent = () => {
     setShowRegistration(false);
   };
 
-  const handleRegistration = (userData) => {
+  // Helper function to format username properly
+  const formatUserName = (userName, email) => {
+    if (userName && userName.trim()) {
+      // Capitalize first letter of each word
+      return userName.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ');
+    }
+    // Fallback: extract name from email and format it
+    const emailName = email.split('@')[0];
+    return emailName.charAt(0).toUpperCase() + emailName.slice(1).toLowerCase();
+  };
+
+  const handleRegistration = (registrationData) => {
     // Here you would typically handle the registration
-    console.log('New user registered:', userData);
-    // Extract username from email for display
-    const userName = userData.email.split('@')[0];
+    console.log('New user registered:', registrationData);
+    // Use the userName field from registration data for display
+    const userName = formatUserName(registrationData.userName, registrationData.email);
+    // Store the complete user data for use in PersonalInfo component
+    setUserData(registrationData);
     // After successful registration, automatically log them in as a user
     setIsAuthenticated(true);
     setUserType('user');
@@ -335,15 +359,6 @@ const AppContent = () => {
       category: 'patient'
     });
     
-    // Trigger notification for new medical record
-    addNotification({
-      type: 'info',
-      icon: '📋',
-      title: 'New Medical Record Created',
-      description: `Medical record created for patient ${patientData.indexNo} - ${patientData.condition}`,
-      category: 'medical-record'
-    });
-    
     // Navigate to patient management screen to show the new record
     setPreviousSection(activeSection);
     setActiveSection('patient-management');
@@ -492,7 +507,7 @@ const AppContent = () => {
               <div className="section active">
                 {activeSection === 'dashboard' && <UserDashboard userName={userName} />}
                 {activeSection === 'notifications' && <UserNotifications />}
-                {activeSection === 'personal-info' && <PersonalInfo userName={userName} />}
+                {activeSection === 'personal-info' && <PersonalInfo userName={userName} userData={userData} />}
                 {activeSection === 'medical-history' && <MedicalHistory userName={userName} />}
               </div>
             </div>
