@@ -23,33 +23,43 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
         return {
           title: 'Inventory Report',
           description: 'Current medicine stock levels and inventory status',
-          data: medicines.length > 0 ? medicines : getSampleData('Inventory Report'),
-          columns: ['ID', 'Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Expiry Date']
+          data: medicines,
+          columns: ['ID', 'Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
         };
       case 'patient':
         return {
           title: 'Patient Report',
           description: 'Patient medical records and history',
-          data: medicalRecords.length > 0 ? medicalRecords : getSampleData('Patient Report'),
-          columns: ['ID', 'Index No', 'Condition', 'Consulted Date', 'Consulted Time']
+          data: patients,
+          columns: ['ID', 'Index No', 'Condition', 'Consulted Date', 'Consulted Time', 'Reason', 'Role']
         };
       case 'low-stock':
         return {
           title: 'Low Stock Report',
           description: 'Medicines that are running low on stock',
-          data: medicines.length > 0 ? medicines.filter(med => med.stockLevel === 'Low Stock' || med.quantity < med.lowStockThreshold) : getSampleData('Low Stock Report'),
-          columns: ['ID', 'Name', 'Category', 'Current Quantity', 'Threshold', 'Stock Level']
+          data: medicines.filter(med => {
+            // Check if medicine has low stock based on quantity vs threshold
+            const hasLowStock = med.lowStockThreshold && 
+                               med.quantity && 
+                               parseInt(med.quantity) <= parseInt(med.lowStockThreshold);
+            
+            // Also check stock level if available
+            const isLowStockLevel = med.stockLevel === 'Low Stock' || med.stockLevel === 'Out of Stock';
+            
+            return hasLowStock || isLowStockLevel;
+          }),
+          columns: ['ID', 'Medicine Name', 'Category', 'Brand', 'Current Quantity', 'Low Stock Threshold', 'Stock Level']
         };
       case 'expiry':
         return {
           title: 'Expiry Report',
           description: 'Medicines approaching their expiry dates',
-          data: medicines.length > 0 ? medicines.filter(med => {
+          data: medicines.filter(med => {
             const expiryDate = new Date(med.expiryDate);
             const today = new Date();
             const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 90;
-          }) : getSampleData('Expiry Report'),
+          }),
           columns: ['ID', 'Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry']
         };
       default:
@@ -75,113 +85,29 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
   const getReportColumns = (type) => {
     switch (type) {
       case 'Patient Report':
-        return ['ID', 'Index No', 'Condition', 'Consulted Date'];
+      case 'patient':
+        return ['ID', 'Index No', 'Condition', 'Consulted Date', 'Consulted Time'];
       case 'Inventory Report':
-        return ['ID', 'Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Expiry Date'];
+      case 'inventory':
+        return ['ID', 'Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold'];
       case 'Low Stock Report':
+      case 'low-stock':
         return ['ID', 'Name', 'Category', 'Current Quantity', 'Threshold', 'Stock Level'];
       case 'Expiry Report':
+      case 'expiry':
         return ['ID', 'Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry'];
       default:
+        // If we have report data, use the columns from the report
+        if (report && report.columns) {
+          return report.columns;
+        }
         return ['ID', 'Name', 'Details'];
     }
   };
 
   const getSampleData = (type) => {
-    switch (type) {
-      case 'Inventory Report':
-        return [
-          {
-            id: 'M54321',
-            name: 'Paracetamol 500mg',
-            category: 'Analgesics',
-            brand: 'PharmaCorp',
-            quantity: 150,
-            stockLevel: 'In Stock',
-            expiryDate: '2024-12-31'
-          },
-          {
-            id: 'M54322',
-            name: 'Amoxicillin 250mg',
-            category: 'Antibiotics',
-            brand: 'MediLife',
-            quantity: 15,
-            stockLevel: 'Low Stock',
-            expiryDate: '2024-08-15'
-          },
-          {
-            id: 'M54323',
-            name: 'Ibuprofen 200mg',
-            category: 'Analgesics',
-            brand: 'HealthPlus',
-            quantity: 80,
-            stockLevel: 'In Stock',
-            expiryDate: '2025-02-28'
-          },
-          {
-            id: 'M54324',
-            name: 'Cetirizine 10mg',
-            category: 'Antihistamines',
-            brand: 'AllergyFree',
-            quantity: 0,
-            stockLevel: 'Out of Stock',
-            expiryDate: '2023-10-01'
-          }
-        ];
-      case 'Patient Report':
-        return [
-          {
-            id: 'P001',
-            indexNo: '123456',
-            condition: 'Hypertension',
-            consultedDate: '2023-10-01'
-          },
-          {
-            id: 'P002',
-            indexNo: '123457',
-            condition: 'Diabetes',
-            consultedDate: '2023-10-02'
-          }
-        ];
-      case 'Low Stock Report':
-        return [
-          {
-            id: 'M54322',
-            name: 'Amoxicillin 250mg',
-            category: 'Antibiotics',
-            quantity: 15,
-            lowStockThreshold: 20,
-            stockLevel: 'Low Stock'
-          },
-          {
-            id: 'M54324',
-            name: 'Cetirizine 10mg',
-            category: 'Antihistamines',
-            quantity: 0,
-            lowStockThreshold: 10,
-            stockLevel: 'Out of Stock'
-          }
-        ];
-      case 'Expiry Report':
-        return [
-          {
-            id: 'M54322',
-            name: 'Amoxicillin 250mg',
-            category: 'Antibiotics',
-            quantity: 15,
-            expiryDate: '2024-08-15'
-          },
-          {
-            id: 'M54324',
-            name: 'Cetirizine 10mg',
-            category: 'Antihistamines',
-            quantity: 0,
-            expiryDate: '2023-10-01'
-          }
-        ];
-      default:
-        return [];
-    }
+    // Return empty array for all types - no sample data
+    return [];
   };
 
   const reportData = getReportData();
@@ -261,6 +187,9 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
           case 'Name':
             cellValue = item.medicineName || item.name || item.patientName || '-';
             break;
+          case 'Medicine Name':
+            cellValue = item.medicineName || item.name || '-';
+            break;
           case 'Category':
             cellValue = item.category || '-';
             break;
@@ -268,6 +197,9 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
             cellValue = item.brand || '-';
             break;
           case 'Quantity':
+            cellValue = item.quantity || '-';
+            break;
+          case 'Current Quantity':
             cellValue = item.quantity || '-';
             break;
           case 'Unit':
@@ -283,7 +215,10 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
             cellValue = item.description || '-';
             break;
           case 'Threshold':
-            cellValue = item.threshold || '-';
+            cellValue = item.threshold || item.lowStockThreshold || '-';
+            break;
+          case 'Low Stock Threshold':
+            cellValue = item.lowStockThreshold || '-';
             break;
           case 'Total Value':
             cellValue = item.totalValue ? `$${item.totalValue}` : '-';
@@ -299,6 +234,16 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
             break;
           case 'Expiry Date':
             cellValue = item.expiryDate || '-';
+            break;
+          case 'Days Until Expiry':
+            if (item.expiryDate) {
+              const expiryDate = new Date(item.expiryDate);
+              const today = new Date();
+              const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+              cellValue = daysUntilExpiry > 0 ? daysUntilExpiry : 'Expired';
+            } else {
+              cellValue = '-';
+            }
             break;
           case 'Condition':
             cellValue = item.condition || '-';
@@ -405,6 +350,9 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
                             case 'Name':
                               cellValue = item.medicineName || item.name || item.patientName || '-';
                               break;
+                            case 'Medicine Name':
+                              cellValue = item.medicineName || item.name || '-';
+                              break;
                             case 'Condition':
                               cellValue = item.condition || '-';
                               break;
@@ -452,7 +400,10 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
                               cellValue = item.location || '-';
                               break;
                             case 'Threshold':
-                              cellValue = item.threshold || '-';
+                              cellValue = item.threshold || item.lowStockThreshold || '-';
+                              break;
+                            case 'Low Stock Threshold':
+                              cellValue = item.lowStockThreshold || '-';
                               break;
                             case 'Reorder Level':
                               cellValue = item.reorderLevel || '-';

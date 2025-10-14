@@ -72,13 +72,13 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
     
     switch (reportType) {
       case 'Patient Report':
-        // Apply filters to medical records data
-        let filteredRecords = [...medicalRecords];
+        // Apply filters to patient data (not medical records)
+        let filteredRecords = [...patients];
         
         // Filter by date range
         if (dateRange.startDate || dateRange.endDate) {
           filteredRecords = filteredRecords.filter(record => {
-            const recordDate = new Date(record.consultedDate);
+            const recordDate = new Date(record.admittedDate || record.consultedDate);
             const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
             const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null;
             
@@ -100,7 +100,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           title: 'Patient Medical Records Report',
           description: 'Comprehensive report of patient medical history and records',
           data: filteredRecords,
-          columns: ['ID', 'Index No', 'Condition', 'Consulted Date', 'Consulted Time']
+          columns: ['ID', 'Index No', 'Condition', 'Consulted Date', 'Consulted Time', 'Reason', 'Role']
         };
         return patientReport;
       case 'Inventory Report':
@@ -108,14 +108,24 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           title: 'Medicine Inventory Report',
           description: 'Current stock levels and inventory status of all medicines',
           data: medicines,
-          columns: ['Unit', 'Supplier', 'Batch Number', 'Cost Per Unit', 'Threshold']
+          columns: ['ID', 'Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
         };
       case 'Low Stock Report':
         return {
           title: 'Low Stock Alert Report',
           description: 'Medicines that are running low on stock and need reordering',
-          data: medicines.filter(med => med.stockLevel === 'Low Stock' || med.quantity < med.lowStockThreshold),
-          columns: ['ID', 'Name', 'Category', 'Current Quantity', 'Threshold', 'Stock Level']
+          data: medicines.filter(med => {
+            // Check if medicine has low stock based on quantity vs threshold
+            const hasLowStock = med.lowStockThreshold && 
+                               med.quantity && 
+                               parseInt(med.quantity) <= parseInt(med.lowStockThreshold);
+            
+            // Also check stock level if available
+            const isLowStockLevel = med.stockLevel === 'Low Stock' || med.stockLevel === 'Out of Stock';
+            
+            return hasLowStock || isLowStockLevel;
+          }),
+          columns: ['ID', 'Medicine Name', 'Category', 'Brand', 'Current Quantity', 'Low Stock Threshold', 'Stock Level']
         };
       case 'Expiry Report':
         return {
@@ -139,19 +149,33 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
   const downloadCSV = () => {
     if (!reportInfo || !reportInfo.data) return;
     const rows = [reportInfo.columns, ...reportInfo.data.map(item => reportInfo.columns.map(col => {
-      // try to map column name to object key heuristically
-      const key = col.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^(id)$/, 'id');
-      // Prefer common keys
-      const lookup = {
-        id: item.id || item.ID || item._id,
-        name: item.name || item.Name,
-        category: item.category || item.Category,
-        brand: item.brand || item.Brand,
-        quantity: item.quantity || item.Quantity,
-        stocklevel: item.stockLevel || item.stocklevel || item.StockLevel,
-        expirydate: item.expiryDate || item.ExpiryDate
+      // Handle special cases first
+      if (col === 'Days Until Expiry' && item.expiryDate) {
+        return Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+      }
+      
+      // Map column names to actual object properties
+      const columnMapping = {
+        'ID': item.id,
+        'Medicine Name': item.medicineName,
+        'Name': item.medicineName || item.name,
+        'Category': item.category,
+        'Brand': item.brand,
+        'Quantity': item.quantity,
+        'Stock Level': item.stockLevel,
+        'Low Stock Threshold': item.lowStockThreshold,
+        'Expiry Date': item.expiryDate,
+        'Index No': item.indexNo,
+        'Condition': item.condition,
+        'Consulted Date': item.consultedDate || item.admittedDate,
+        'Consulted Time': item.consultedTime || item.admittedTime,
+        'Reason': item.reason || item.reasonForConsultation,
+        'Role': item.role,
+        'Current Quantity': item.quantity,
+        'Threshold': item.lowStockThreshold
       };
-      return (lookup[key] !== undefined ? lookup[key] : Object.values(item)[0]);
+      
+      return columnMapping[col] || '';
     }))];
 
     const csvContent = rows.map(r => r.map(cell => `"${String(cell === undefined || cell === null ? '' : cell).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -183,8 +207,33 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
     reportInfo.data.forEach(item => {
       printWindow.document.write('<tr>');
       reportInfo.columns.forEach(col => {
-        const key = col.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const val = item[col] || item[col.replace(/\s+/g, '')] || item[Object.keys(item)[0]] || '';
+        // Handle special cases first
+        let val = '';
+        if (col === 'Days Until Expiry' && item.expiryDate) {
+          val = Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+        } else {
+          // Map column names to actual object properties
+          const columnMapping = {
+            'ID': item.id,
+            'Medicine Name': item.medicineName,
+            'Name': item.medicineName || item.name,
+            'Category': item.category,
+            'Brand': item.brand,
+            'Quantity': item.quantity,
+            'Stock Level': item.stockLevel,
+            'Low Stock Threshold': item.lowStockThreshold,
+            'Expiry Date': item.expiryDate,
+            'Index No': item.indexNo,
+            'Condition': item.condition,
+            'Consulted Date': item.consultedDate || item.admittedDate,
+            'Consulted Time': item.consultedTime || item.admittedTime,
+            'Reason': item.reason || item.reasonForConsultation,
+            'Role': item.role,
+            'Current Quantity': item.quantity,
+            'Threshold': item.lowStockThreshold
+          };
+          val = columnMapping[col] || '';
+        }
         printWindow.document.write(`<td>${val}</td>`);
       });
       printWindow.document.write('</tr>');
@@ -327,10 +376,35 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
                       <tr key={index}>
                         {reportInfo.columns.map((column, colIndex) => (
                           <td key={colIndex}>
-                            {column === 'Days Until Expiry' && item.expiryDate ? 
-                              Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)) :
-                              item[Object.keys(item)[colIndex]] || '-'
-                            }
+                            {(() => {
+                              // Handle special cases first
+                              if (column === 'Days Until Expiry' && item.expiryDate) {
+                                return Math.ceil((new Date(item.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+                              }
+                              
+                              // Map column names to actual object properties
+                              const columnMapping = {
+                                'ID': item.id,
+                                'Medicine Name': item.medicineName,
+                                'Name': item.medicineName || item.name,
+                                'Category': item.category,
+                                'Brand': item.brand,
+                                'Quantity': item.quantity,
+                                'Stock Level': item.stockLevel,
+                                'Low Stock Threshold': item.lowStockThreshold,
+                                'Expiry Date': item.expiryDate,
+                                'Index No': item.indexNo,
+                                'Condition': item.condition,
+                                'Consulted Date': item.consultedDate || item.admittedDate,
+                                'Consulted Time': item.consultedTime || item.admittedTime,
+                                'Reason': item.reason || item.reasonForConsultation,
+                                'Role': item.role,
+                                'Current Quantity': item.quantity,
+                                'Threshold': item.lowStockThreshold
+                              };
+                              
+                              return columnMapping[column] || '-';
+                            })()}
                           </td>
                         ))}
                       </tr>
