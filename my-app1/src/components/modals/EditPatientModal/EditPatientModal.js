@@ -35,7 +35,7 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
         reasonForConsultation: patient.reasonForConsultation || patient.reason || '',
         consultedDate: patient.consultedDate || patient.admittedDate || '',
         consultedTime: patient.consultedTime || '10:30 AM',
-        prescribedMedicines: patient.prescribedMedicines || [
+        prescribedMedicines: Array.isArray(patient.prescribedMedicines) ? patient.prescribedMedicines : [
           { name: 'vitamin c', quantity: '10' }
         ],
         labReports: patient.labReports || null
@@ -125,7 +125,12 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
       gender: '',
       condition: '',
       additionalNotes: '',
-      role: ''
+      role: '',
+      reasonForConsultation: '',
+      consultedDate: '',
+      consultedTime: '',
+      prescribedMedicines: [],
+      labReports: null
     });
     setErrors({});
     onClose();
@@ -207,7 +212,7 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
                   <div className={styles.medicinesInputWrapper}>
                     <input
                       type="text"
-                      value={formData.prescribedMedicines.map(med => med.name).join(', ') || 'Paracetamol, Amoxicillin'}
+                      value={formData.prescribedMedicines && formData.prescribedMedicines.length > 0 ? formData.prescribedMedicines.map(med => med.name).join(', ') : 'Paracetamol, Amoxicillin'}
                       className={styles.formInput}
                       disabled
                     />
@@ -226,12 +231,18 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.prescribedMedicines.map((medicine, index) => (
-                      <tr key={index}>
-                        <td>{medicine.name}</td>
-                        <td>{medicine.quantity}</td>
+                    {formData.prescribedMedicines && formData.prescribedMedicines.length > 0 ? (
+                      formData.prescribedMedicines.map((medicine, index) => (
+                        <tr key={index}>
+                          <td>{medicine.name}</td>
+                          <td>{medicine.quantity}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="2">No prescribed medicines</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
