@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { registerUser, loginUser, getUserByEmail, updateUser } = require("../Controllers/authController");
+const { registerUser, loginUser, getUserByEmail, updateUser } = require("../controllers/authController");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 // Register

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import styles from './PersonalInfo.module.scss';
 
-const PersonalInfo = ({ userName, userData: propUserData }) => {
+const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) => {
   const { addNotification } = useNotifications();
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -26,15 +26,20 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
           return;
         }
 
-
         // Otherwise, try to fetch from API using email from userData if available
         const emailToFetch = propUserData?.email || userName;
         console.log("Fetching user data for email:", emailToFetch);
         try {
           const response = await axios.get(`http://localhost:8000/api/user/getByEmail/${emailToFetch}`);
           console.log("API Response:", response.data);
-          setUserData(response.data);
-          setEditData(response.data);
+          const fetchedUserData = response.data;
+          setUserData(fetchedUserData);
+          setEditData(fetchedUserData);
+          
+          // Update parent component with fresh data from API
+          if (onUpdateUserData) {
+            onUpdateUserData(fetchedUserData);
+          }
         } catch (apiError) {
           console.log("API call failed:", apiError);
           console.log("Using fallback data");
@@ -74,7 +79,7 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
     } else {
       setLoading(false);
     }
-  }, [userName, propUserData]);
+  }, [userName, propUserData, onUpdateUserData]);
 
 
   const handleEditClick = () => setIsEditing(true);
@@ -88,9 +93,15 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
       // If we have real API data, try to save it
       if (userData._id) {
         const response = await axios.put(`http://localhost:8000/api/user/update/${userData._id}`, editData);
-        setUserData(response.data);
+        const updatedUserData = response.data;
+        setUserData(updatedUserData);
         setIsEditing(false);
-        console.log('Profile updated:', response.data);
+        console.log('Profile updated:', updatedUserData);
+        
+        // Update the parent component's userData state
+        if (onUpdateUserData) {
+          onUpdateUserData(updatedUserData);
+        }
         
         // Add notification for profile update
         addNotification({
@@ -106,6 +117,11 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
         setIsEditing(false);
         console.log('Profile updated locally:', editData);
         
+        // Update the parent component's userData state even for mock data
+        if (onUpdateUserData) {
+          onUpdateUserData(editData);
+        }
+        
         // Add notification for profile update
         addNotification({
           type: 'success',
@@ -118,6 +134,15 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
     } catch (err) {
       console.error(err);
       setError('Failed to update profile.');
+      
+      // Add error notification
+      addNotification({
+        type: 'error',
+        icon: '❌',
+        title: 'Update Failed',
+        description: 'Failed to update profile. Please try again.',
+        category: 'profile'
+      });
     }
   };
 

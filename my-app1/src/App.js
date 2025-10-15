@@ -577,10 +577,22 @@ const AppContent = () => {
     setRecentReports(prev => prev.filter(report => report.id !== reportId));
   };
 
+  const handleUpdateUserData = (updatedUserData) => {
+    setUserData(updatedUserData);
+    // Also update the userName if it changed
+    if (updatedUserData.userName) {
+      const formattedName = updatedUserData.userName.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      ).join(' ');
+      setUserName(formattedName);
+    }
+  };
+
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserType(null);
     setUserName('');
+    setUserData(null);
     // Clear user type for notifications
     setUserTypeForNotifications(null);
     setPreviousSection('dashboard');
@@ -706,7 +718,7 @@ const AppContent = () => {
               <div className="section active">
                 {activeSection === 'dashboard' && <UserDashboard userName={userName} />}
                 {activeSection === 'notifications' && <UserNotifications />}
-                {activeSection === 'personal-info' && <PersonalInfo userName={userName} userData={userData} />}
+                {activeSection === 'personal-info' && <PersonalInfo userName={userName} userData={userData} onUpdateUserData={handleUpdateUserData} />}
                 {activeSection === 'medical-history' && <MedicalHistory userName={userName} patients={patients} />}
               </div>
             </div>
