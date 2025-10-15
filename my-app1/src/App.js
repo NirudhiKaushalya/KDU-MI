@@ -26,7 +26,7 @@ import { ActivityProvider, useActivities } from './contexts/ActivityContext';
 import './styles/App.scss';
 
 const AppContent = () => {
-  const { addNotification, checkStockAlerts, markAllNewAsRead, clearStockAlertsForMedicine, clearExpiryAlertsForMedicine, clearAllNotifications, getNewNotificationsCount } = useNotifications();
+  const { addNotification, checkStockAlerts, markAllNewAsRead, clearStockAlertsForMedicine, clearExpiryAlertsForMedicine, clearAllNotifications, getNewNotificationsCount, notifications, setNotifications, setUserTypeForNotifications } = useNotifications();
   const { settings } = useSettings();
   const { addActivity } = useActivities();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -89,13 +89,13 @@ const AppContent = () => {
     }
   }, [clearAllNotifications]);
 
-  // Check for stock alerts whenever medicines change
+  // Check for stock alerts whenever medicines change (only for admin users)
   useEffect(() => {
-    if (medicines.length > 0) {
-      // Only check for stock alerts, don't clear all notifications
+    if (medicines.length > 0 && userType === 'admin') {
+      // Only check for stock alerts for admin users, don't clear all notifications
       checkStockAlerts(medicines);
     }
-  }, [medicines, checkStockAlerts]);
+  }, [medicines, checkStockAlerts, userType]);
 
 
   const handleLogin = (success, type = null, name = '', loginUserData = null) => {
@@ -110,7 +110,10 @@ const AppContent = () => {
     if (loginUserData) {
       setUserData(loginUserData);
     }
+    
+    // Set user type for notification filtering
     if (success) {
+      setUserTypeForNotifications(type);
       setPreviousSection('dashboard');
       setActiveSection('dashboard');
     }
@@ -155,6 +158,8 @@ const AppContent = () => {
     setIsAuthenticated(true);
     setUserType('user');
     setUserName(userName);
+    // Set user type for notification filtering
+    setUserTypeForNotifications('user');
     setPreviousSection('dashboard');
     setActiveSection('dashboard');
     setShowRegistration(false);
@@ -287,8 +292,10 @@ const AppContent = () => {
         // Clear expiry alerts for this medicine when it's updated
         clearExpiryAlertsForMedicine(updatedMedicine.id);
         
-        // Check for stock alerts after updating medicine
-        checkStockAlerts(updatedMedicines);
+        // Check for stock alerts after updating medicine (only for admin users)
+        if (userType === 'admin') {
+          checkStockAlerts(updatedMedicines);
+        }
         
         return updatedMedicines;
       });
@@ -342,8 +349,10 @@ const AppContent = () => {
         clearStockAlertsForMedicine(medicineId);
         clearExpiryAlertsForMedicine(medicineId);
         
-        // Check for stock alerts after deleting medicine
-        checkStockAlerts(updatedMedicines);
+        // Check for stock alerts after deleting medicine (only for admin users)
+        if (userType === 'admin') {
+          checkStockAlerts(updatedMedicines);
+        }
         
         return updatedMedicines;
       });
@@ -399,8 +408,10 @@ const AppContent = () => {
             return medicine;
           });
           
-          // Check for stock alerts after updating quantities
-          checkStockAlerts(updatedMedicines);
+          // Check for stock alerts after updating quantities (only for admin users)
+          if (userType === 'admin') {
+            checkStockAlerts(updatedMedicines);
+          }
           
           return updatedMedicines;
         });
@@ -570,6 +581,8 @@ const AppContent = () => {
     setIsAuthenticated(false);
     setUserType(null);
     setUserName('');
+    // Clear user type for notifications
+    setUserTypeForNotifications(null);
     setPreviousSection('dashboard');
     setActiveSection('dashboard');
   };

@@ -85,10 +85,19 @@ exports.loginUser = async (req, res) => {
         message: "Admin login successful",
         token,
         user: {
-          id: "admin",
-          username: "Admin",
+          _id: "admin",
+          userName: "Admin",
+          indexNo: "ADMIN001",
+          gender: "other",
+          dob: "1990-01-01",
           email: "Admin@gmail.com",
-          role: "admin"
+          contactNo: "+1234567890",
+          role: "admin",
+          intake: "Admin",
+          department: "Administration",
+          additionalNotes: "System Administrator",
+          photoPreview: null,
+          photoData: null
         }
       });
     }
@@ -118,10 +127,19 @@ exports.loginUser = async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user._id,
-        username: user.userName,
+        _id: user._id,
+        userName: user.userName,
+        indexNo: user.indexNo,
+        gender: user.gender,
+        dob: user.dob,
         email: user.email,
-        role: user.role
+        contactNo: user.contactNo,
+        role: user.role,
+        intake: user.intake,
+        department: user.department,
+        additionalNotes: user.additionalNotes,
+        photoPreview: user.photoPreview,
+        photoData: user.photoData
       }
     });
   } catch (error) {

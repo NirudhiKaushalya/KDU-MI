@@ -47,7 +47,6 @@ const MedicalHistory = ({ userName = 'User', patients = [] }) => {
           <table className={styles.medicalRecordsTable}>
             <thead>
               <tr>
-                <th>Patient</th>
                 <th>Index No</th>
                 <th>Consulted Date</th>
                 <th>Condition</th>
@@ -58,7 +57,6 @@ const MedicalHistory = ({ userName = 'User', patients = [] }) => {
             <tbody>
               {medicalRecords.map((record) => (
                 <tr key={record.id} className={styles.tableRow}>
-                  <td className={styles.patientName}>{record.patientName}</td>
                   <td className={styles.recordNo}>#{record.recordNo}</td>
                   <td className={styles.date}>{record.date}</td>
                   <td className={styles.condition}>{record.diagnosis}</td>

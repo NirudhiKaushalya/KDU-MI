@@ -14,40 +14,52 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
   useEffect(() => {
     const setupUserData = async () => {
       try {
-        // If we have user data from props (from registration), use it
+        console.log("PersonalInfo useEffect - userName:", userName, "propUserData:", propUserData);
+        console.log("propUserData email:", propUserData?.email);
+        
+        // If we have user data from props (from registration or login), use it
         if (propUserData) {
-          console.log("Using user data from registration:", propUserData);
+          console.log("Using user data from props:", propUserData);
           setUserData(propUserData);
           setEditData(propUserData);
           setLoading(false);
           return;
         }
 
-        // Otherwise, try to fetch from API
-        console.log("Fetching user data for:", userName);
+
+        // Otherwise, try to fetch from API using email from userData if available
+        const emailToFetch = propUserData?.email || userName;
+        console.log("Fetching user data for email:", emailToFetch);
         try {
-          const response = await axios.get(`http://localhost:8000/api/user/getByEmail/${userName}`);
+          const response = await axios.get(`http://localhost:8000/api/user/getByEmail/${emailToFetch}`);
           console.log("API Response:", response.data);
           setUserData(response.data);
           setEditData(response.data);
         } catch (apiError) {
-          console.log("API not available, using mock data");
-          // Mock data for demo purposes when API is not available
-          const mockData = {
-            userName: userName || 'Demo User',
-            indexNo: 'P12345678',
-            gender: 'male',
-            dob: '1995-01-01',
-            email: userName || 'demo@example.com',
-            contactNo: '+1 234 567 890',
-            role: 'Dayscholar',
-            department: 'Department of IT',
-            intake: 'Fall 2023',
-            additionalNotes: 'Allergic to penicillin.',
-            photoPreview: null // No photo in mock data
-          };
-          setUserData(mockData);
-          setEditData(mockData);
+          console.log("API call failed:", apiError);
+          console.log("Using fallback data");
+          // If we have propUserData, use it; otherwise use mock data
+          if (propUserData) {
+            setUserData(propUserData);
+            setEditData(propUserData);
+          } else {
+            // Mock data for demo purposes when API is not available
+            const mockData = {
+              userName: userName || 'Demo User',
+              indexNo: 'P12345678',
+              gender: 'male',
+              dob: '1995-01-01',
+              email: userName || 'demo@example.com',
+              contactNo: '+1 234 567 890',
+              role: 'Dayscholar',
+              department: 'Department of IT',
+              intake: 'Fall 2023',
+              additionalNotes: 'Allergic to penicillin.',
+              photoPreview: null // No photo in mock data
+            };
+            setUserData(mockData);
+            setEditData(mockData);
+          }
         }
         setLoading(false);
       } catch (err) {
@@ -113,13 +125,15 @@ const PersonalInfo = ({ userName, userData: propUserData }) => {
     setEditData(prev => ({ ...prev, [field]: value }));
   };
 
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
+  if (!userData) return <p>No user data available. Please log in again.</p>;
 
   return (
     <div className={styles.personalInfo}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Welcome {userData.userName}!</h1>
+        <h1 className={styles.pageTitle}>Welcome {userData.userName || 'User'}!</h1>
       </div>
 
       <div className={styles.contentCard}>

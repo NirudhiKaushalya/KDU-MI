@@ -19,8 +19,42 @@ export const NotificationProvider = ({ children }) => {
     expiryAlertEnabled: true
   };
   const [notifications, setNotifications] = useState([]);
+  const [userType, setUserType] = useState(null); // Track user type for filtering
+
+  // Function to set user type for notification filtering
+  const setUserTypeForNotifications = useCallback((type) => {
+    setUserType(type);
+    
+    // If user is not admin, clear all admin notifications
+    if (type !== 'admin') {
+      setNotifications(prev => prev.filter(notification => 
+        !(notification.category === 'stock' || 
+          notification.category === 'expiry' || 
+          notification.category === 'medicine' || 
+          notification.category === 'inventory')
+      ));
+    }
+  }, []);
+
+  // Function to check if notification should be shown to current user
+  const shouldShowNotification = useCallback((notification) => {
+    // Admin users see all notifications
+    if (userType === 'admin') {
+      return true;
+    }
+    
+    // Regular users only see user-relevant notifications
+    const userRelevantCategories = ['patient', 'profile', 'success'];
+    return userRelevantCategories.includes(notification.category);
+  }, [userType]);
 
   const addNotification = useCallback((notification) => {
+    // Check if notification should be shown to current user
+    if (!shouldShowNotification(notification)) {
+      console.log('Notification filtered out for user type:', userType, notification);
+      return;
+    }
+
     const newNotification = {
       id: Date.now() + Math.random(),
       timestamp: new Date().toLocaleString(),
@@ -198,6 +232,7 @@ export const NotificationProvider = ({ children }) => {
 
   const value = {
     notifications,
+    setNotifications,
     addNotification,
     dismissNotification,
     markAsRead,
@@ -209,7 +244,9 @@ export const NotificationProvider = ({ children }) => {
     clearExpiryAlertsForMedicine,
     clearAllNotifications,
     isLowStockAlertEnabled,
-    isExpiryAlertEnabled
+    isExpiryAlertEnabled,
+    setUserTypeForNotifications,
+    shouldShowNotification
   };
 
   return (
