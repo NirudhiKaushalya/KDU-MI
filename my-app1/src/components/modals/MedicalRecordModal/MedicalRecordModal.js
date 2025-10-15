@@ -25,15 +25,29 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
   };
 
   const handleViewLabReport = (file) => {
-    // Create a URL for the file and open it in a new tab
-    if (file instanceof File) {
-      const url = URL.createObjectURL(file);
-      window.open(url, '_blank');
-      // Clean up the URL after a delay to free memory
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } else if (file.url) {
-      // If file has a URL property (for stored files)
-      window.open(file.url, '_blank');
+    try {
+      // Create a URL for the file and open it in a new tab
+      if (file instanceof File) {
+        const url = URL.createObjectURL(file);
+        window.open(url, '_blank');
+        // Clean up the URL after a delay to free memory
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else if (file && file.url) {
+        // If file has a URL property (for stored files)
+        window.open(file.url, '_blank');
+      } else if (file && file.data) {
+        // If file has base64 data
+        const blob = new Blob([file.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else {
+        // Fallback: show alert if file cannot be opened
+        alert('Unable to open lab report. File format not supported.');
+      }
+    } catch (error) {
+      console.error('Error opening lab report:', error);
+      alert('Error opening lab report. Please try again.');
     }
   };
 
@@ -93,19 +107,6 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     doc.text(`Reason for Consultation: ${formData.reasonForConsultation}`, 20, yPosition);
     yPosition += 15;
 
-    // Prescribed medicines section
-    if (record?.prescribedMedicines && record.prescribedMedicines.length > 0) {
-      doc.setFont(undefined, 'bold');
-      doc.text('Prescribed Medicines:', 20, yPosition);
-      yPosition += 10;
-      
-      doc.setFont(undefined, 'normal');
-      record.prescribedMedicines.forEach((medicine, index) => {
-        doc.text(`${index + 1}. ${medicine.name} - Quantity: ${medicine.quantity}`, 30, yPosition);
-        yPosition += 8;
-      });
-      yPosition += 10;
-    }
 
     // Additional notes section
     if (formData.additionalNotes) {
@@ -200,16 +201,6 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
                 />
               </div>
 
-              <div className={styles.formField}>
-                <div className={styles.searchWrapper}>
-                  <input
-                    type="text"
-                    placeholder="Search Medicines..."
-                    className={styles.searchInput}
-                  />
-                  <span className={styles.searchIcon}>🔍</span>
-                </div>
-              </div>
             </div>
 
             <div className={styles.rightColumn}>
@@ -245,6 +236,7 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
                   <span className={styles.clockIcon}>🕐</span>
                 </div>
               </div>
+
 
               <div className={styles.formField}>
                 <label className={styles.fieldLabel}>Lab Reports:</label>

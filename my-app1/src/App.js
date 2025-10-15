@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Sidebar from './components/common/Sidebar/Sidebar';
 import Header from './components/common/Header/Header';
 import Footer from './components/common/Footer/Footer';
@@ -50,6 +51,27 @@ const AppContent = () => {
 
   // Reports data - stores generated reports
   const [recentReports, setRecentReports] = useState([]);
+
+  // Load data from database on app start
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load patients from database
+        const patientsResponse = await axios.get('http://localhost:8000/api/patient/');
+        setPatients(patientsResponse.data);
+        console.log('Loaded patients from database:', patientsResponse.data);
+
+        // Load medicines from database
+        const medicinesResponse = await axios.get('http://localhost:8000/api/medicines/');
+        setMedicines(medicinesResponse.data);
+        console.log('Loaded medicines from database:', medicinesResponse.data);
+      } catch (error) {
+        console.log('Database not available, using local state only');
+      }
+    };
+
+    loadData();
+  }, []);
 
   // Clear any existing dummy notifications on app start
   useEffect(() => {
@@ -148,316 +170,400 @@ const AppContent = () => {
     setActiveSection(section);
   };
 
-  const handleAddMedicine = (newMedicine) => {
-    setMedicines(prev => {
-      const updatedMedicines = [...prev, newMedicine];
+  const handleAddMedicine = async (newMedicine) => {
+    try {
+      // Save to database via API
+      const response = await axios.post('http://localhost:8000/api/medicines/', newMedicine);
+      console.log('Medicine saved to database:', response.data);
       
-      // Add activity tracking
-      addActivity({
-        type: 'medicine',
-        action: 'added',
-        title: 'Medicine Added',
-        description: `${newMedicine.medicineName} (${newMedicine.quantity} units) added to inventory`,
-        icon: '💊',
-        details: {
-          medicineName: newMedicine.medicineName,
-          quantity: newMedicine.quantity,
-          category: newMedicine.category,
-          expiryDate: newMedicine.expiryDate
-        }
-      });
-      
-      // Notification is already handled in AddMedicineModal, no need to duplicate here
-      
-      // Don't call checkStockAlerts here - it's already handled in AddMedicineModal
-      // This prevents duplicate alerts for new low stock medicines
-      
-      return updatedMedicines;
-    });
-  };
-
-  const handleUpdateMedicine = (updatedMedicine) => {
-    setMedicines(prev => {
-      const oldMedicine = prev.find(med => med.id === updatedMedicine.id);
-      const updatedMedicines = prev.map(medicine => 
-        medicine.id === updatedMedicine.id ? updatedMedicine : medicine
-      );
-      
-      // Detect what fields were changed
-      const changes = [];
-      if (oldMedicine?.medicineName !== updatedMedicine.medicineName) {
-        changes.push(`name: "${oldMedicine?.medicineName}" → "${updatedMedicine.medicineName}"`);
-      }
-      if (oldMedicine?.category !== updatedMedicine.category) {
-        changes.push(`category: "${oldMedicine?.category}" → "${updatedMedicine.category}"`);
-      }
-      if (oldMedicine?.brand !== updatedMedicine.brand) {
-        changes.push(`brand: "${oldMedicine?.brand}" → "${updatedMedicine.brand}"`);
-      }
-      if (oldMedicine?.quantity !== updatedMedicine.quantity) {
-        changes.push(`quantity: ${oldMedicine?.quantity} → ${updatedMedicine.quantity}`);
-      }
-      if (oldMedicine?.lowStockThreshold !== updatedMedicine.lowStockThreshold) {
-        changes.push(`threshold: ${oldMedicine?.lowStockThreshold} → ${updatedMedicine.lowStockThreshold}`);
-      }
-      if (oldMedicine?.expiryDate !== updatedMedicine.expiryDate) {
-        changes.push(`expiry date: ${oldMedicine?.expiryDate} → ${updatedMedicine.expiryDate}`);
-      }
-
-      // Add notification for medicine update
-      const changeDescription = changes.length > 0 
-        ? `Updated: ${changes.join(', ')}`
-        : 'Medicine information updated successfully';
+      // Update local state
+      setMedicines(prev => {
+        const updatedMedicines = [...prev, response.data];
         
-      addNotification({
-        type: 'success',
-        icon: '✏️',
-        title: 'Medicine Updated',
-        description: `${updatedMedicine.medicineName} - ${changeDescription}`,
-        category: 'medicine'
-      });
-      
-      // Add activity tracking
-      addActivity({
-        type: 'medicine',
-        action: 'updated',
-        title: 'Medicine Updated',
-        description: `${updatedMedicine.medicineName} information updated`,
-        icon: '✏️',
-        details: {
-          medicineName: updatedMedicine.medicineName,
-          oldQuantity: oldMedicine?.quantity,
-          newQuantity: updatedMedicine.quantity,
-          changes: {
-            quantity: oldMedicine?.quantity !== updatedMedicine.quantity,
-            expiryDate: oldMedicine?.expiryDate !== updatedMedicine.expiryDate,
-            threshold: oldMedicine?.lowStockThreshold !== updatedMedicine.lowStockThreshold
-          }
-        }
-      });
-      
-      // If stock was replenished above threshold, clear existing stock alerts
-      const oldStock = parseInt(oldMedicine?.quantity) || 0;
-      const newStock = parseInt(updatedMedicine.quantity) || 0;
-      const threshold = parseInt(updatedMedicine.lowStockThreshold) || 0;
-      
-      if (oldStock <= threshold && newStock > threshold) {
-        clearStockAlertsForMedicine(updatedMedicine.id);
-      }
-      
-      // Clear expiry alerts for this medicine when it's updated
-      clearExpiryAlertsForMedicine(updatedMedicine.id);
-      
-      // Check for stock alerts after updating medicine
-      checkStockAlerts(updatedMedicines);
-      
-      return updatedMedicines;
-    });
-  };
-
-  const handleDeleteMedicine = (medicineId) => {
-    setMedicines(prev => {
-      const medicineToDelete = prev.find(med => med.id === medicineId);
-      const updatedMedicines = prev.filter(medicine => medicine.id !== medicineId);
-      
-      // Add activity tracking
-      if (medicineToDelete) {
+        // Add activity tracking
         addActivity({
           type: 'medicine',
-          action: 'deleted',
-          title: 'Medicine Deleted',
-          description: `${medicineToDelete.medicineName} removed from inventory`,
-          icon: '🗑️',
+          action: 'added',
+          title: 'Medicine Added',
+          description: `${newMedicine.medicineName} (${newMedicine.quantity} units) added to inventory`,
+          icon: '💊',
           details: {
-            medicineName: medicineToDelete.medicineName,
-            quantity: medicineToDelete.quantity,
-            category: medicineToDelete.category
+            medicineName: newMedicine.medicineName,
+            quantity: newMedicine.quantity,
+            category: newMedicine.category,
+            expiryDate: newMedicine.expiryDate
           }
         });
         
-        // Add notification for medicine deletion
-        addNotification({
-          type: 'warning',
-          icon: '🗑️',
-          title: 'Medicine Removed',
-          description: `${medicineToDelete.medicineName} has been removed from the medicine stock.`,
-          category: 'medicine'
-        });
-      }
-      
-      // Clear all notifications for this medicine when it's deleted
-      clearStockAlertsForMedicine(medicineId);
-      clearExpiryAlertsForMedicine(medicineId);
-      
-      // Check for stock alerts after deleting medicine
-      checkStockAlerts(updatedMedicines);
-      
-      return updatedMedicines;
-    });
-  };
-
-  const handleAddPatient = (patientData) => {
-    // Validate and deduct prescribed medicine quantities from stock
-    const prescribedMedicines = patientData.prescribedMedicines || [];
-    
-    if (prescribedMedicines.length > 0) {
-      // Check if sufficient stock is available for all prescribed medicines
-      const stockValidation = prescribedMedicines.every(prescribed => {
-        const medicine = medicines.find(med => med.medicineName === prescribed.name);
-        if (!medicine) {
-          alert(`Medicine "${prescribed.name}" not found in inventory.`);
-          return false;
-        }
-        const availableStock = parseInt(medicine.quantity) || 0;
-        const requestedQuantity = parseInt(prescribed.quantity) || 0;
+        // Notification is already handled in AddMedicineModal, no need to duplicate here
         
-        if (availableStock < requestedQuantity) {
-          alert(`Insufficient stock for "${prescribed.name}". Available: ${availableStock}, Requested: ${requestedQuantity}`);
-          return false;
-        }
-        return true;
-      });
-
-      if (!stockValidation) {
-        return; // Stop processing if stock validation fails
-      }
-
-      // Deduct quantities from medicine stock
-      setMedicines(prev => {
-        const updatedMedicines = prev.map(medicine => {
-          const prescribed = prescribedMedicines.find(p => p.name === medicine.medicineName);
-          if (prescribed) {
-            const currentStock = parseInt(medicine.quantity) || 0;
-            const issuedQuantity = parseInt(prescribed.quantity) || 0;
-            const newStock = currentStock - issuedQuantity;
-            
-            return {
-              ...medicine,
-              quantity: newStock.toString(),
-              stockLevel: newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock'
-            };
-          }
-          return medicine;
-        });
-        
-        // Check for stock alerts after updating quantities
-        checkStockAlerts(updatedMedicines);
+        // Don't call checkStockAlerts here - it's already handled in AddMedicineModal
+        // This prevents duplicate alerts for new low stock medicines
         
         return updatedMedicines;
       });
-
-      // Trigger notification for medicine issued
-      prescribedMedicines.forEach(prescribed => {
-        addNotification({
-          type: 'info',
-          icon: '💊',
-          title: 'Medicine Issued',
-          description: `${prescribed.quantity} units of ${prescribed.name} issued to patient ${patientData.indexNo}.`,
-          category: 'inventory'
-        });
-      });
+    } catch (error) {
+      console.error('Error saving medicine:', error);
+      alert('Error saving medicine. Please try again.');
     }
-
-    // Create a new patient record from the admission form data
-    console.log('Received patient data in handleAdmitPatient:', patientData);
-    console.log('Lab reports in patient data:', patientData.labReports);
-    
-    const newPatient = {
-      id: patientData.id || `P${Date.now()}`, // Use provided ID or generate one
-      indexNo: patientData.indexNo,
-      condition: patientData.condition || patientData.medicalCondition,
-      role: patientData.role || 'Student', // Default role for admitted patients
-      name: patientData.name || `Patient ${patientData.indexNo}`, // Generate name if not provided
-      age: patientData.age || null, // No default age
-      gender: patientData.gender || null, // No default gender
-      // Additional medical record data
-      admittedDate: patientData.admittedDate || patientData.consultedDate,
-      admittedTime: patientData.admittedTime || patientData.consultedTime,
-      reason: patientData.reason || patientData.reasonForConsultation,
-      prescribedMedicines: prescribedMedicines,
-      labReports: patientData.labReports || null,
-      additionalNotes: patientData.additionalNotes || ''
-    };
-    
-    console.log('Created new patient:', newPatient);
-    console.log('New patient lab reports:', newPatient.labReports);
-    
-    setPatients(prev => [...prev, newPatient]);
-    
-    // Add activity tracking
-    addActivity({
-      type: 'patient',
-      action: 'admitted',
-      title: 'Patient Admitted',
-      description: `Patient ${patientData.indexNo} admitted with ${patientData.condition} condition`,
-      icon: '👤',
-      details: {
-        indexNo: patientData.indexNo,
-        condition: patientData.condition,
-        prescribedMedicines: prescribedMedicines.length,
-        medicines: prescribedMedicines.map(m => m.name).join(', ')
-      }
-    });
-    
-    // Trigger notification for new patient admitted
-    addNotification({
-      type: 'success',
-      icon: '👤',
-      title: 'New Patient Admitted',
-      description: `Patient with index number ${patientData.indexNo} has been successfully admitted.`,
-      category: 'patient'
-    });
-    
-    // Navigate to patient management screen to show the new record
-    setPreviousSection(activeSection);
-    setActiveSection('patient-management');
-    
-    // Show success message
-    alert('Patient admitted successfully!');
   };
 
-  const handleUpdatePatient = (updatedPatient) => {
-    setPatients(prev => prev.map(patient => 
-      patient.id === updatedPatient.id ? updatedPatient : patient
-    ));
-  };
-
-  const handleDeletePatient = (patientId) => {
-    setPatients(prev => {
-      const patientToDelete = prev.find(p => p.id === patientId);
-      const updatedPatients = prev.filter(patient => patient.id !== patientId);
+  const handleUpdateMedicine = async (updatedMedicine) => {
+    try {
+      // Update in database via API - use _id if available, otherwise use id
+      const medicineId = updatedMedicine._id || updatedMedicine.id;
+      const response = await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, updatedMedicine);
+      console.log('Medicine updated in database:', response.data);
       
-      // Add notification for patient deletion
-      if (patientToDelete) {
+      // Update local state
+      setMedicines(prev => {
+        const oldMedicine = prev.find(med => (med.id === updatedMedicine.id) || (med._id === updatedMedicine._id));
+        const updatedMedicines = prev.map(medicine => 
+          ((medicine.id === updatedMedicine.id) || (medicine._id === updatedMedicine._id)) ? response.data : medicine
+        );
+        
+        // Detect what fields were changed
+        const changes = [];
+        if (oldMedicine?.medicineName !== updatedMedicine.medicineName) {
+          changes.push(`name: "${oldMedicine?.medicineName}" → "${updatedMedicine.medicineName}"`);
+        }
+        if (oldMedicine?.category !== updatedMedicine.category) {
+          changes.push(`category: "${oldMedicine?.category}" → "${updatedMedicine.category}"`);
+        }
+        if (oldMedicine?.brand !== updatedMedicine.brand) {
+          changes.push(`brand: "${oldMedicine?.brand}" → "${updatedMedicine.brand}"`);
+        }
+        if (oldMedicine?.quantity !== updatedMedicine.quantity) {
+          changes.push(`quantity: ${oldMedicine?.quantity} → ${updatedMedicine.quantity}`);
+        }
+        if (oldMedicine?.lowStockThreshold !== updatedMedicine.lowStockThreshold) {
+          changes.push(`threshold: ${oldMedicine?.lowStockThreshold} → ${updatedMedicine.lowStockThreshold}`);
+        }
+        if (oldMedicine?.expiryDate !== updatedMedicine.expiryDate) {
+          changes.push(`expiry date: ${oldMedicine?.expiryDate} → ${updatedMedicine.expiryDate}`);
+        }
+
+        // Add notification for medicine update
+        const changeDescription = changes.length > 0 
+          ? `Updated: ${changes.join(', ')}`
+          : 'Medicine information updated successfully';
+          
         addNotification({
-          type: 'warning',
-          icon: '👤',
-          title: 'Patient Removed',
-          description: `Patient record removed - Index: ${patientToDelete.indexNo}, Consulted: ${patientToDelete.consultedDate || patientToDelete.admittedDate || 'N/A'}`,
-          category: 'patient'
+          type: 'success',
+          icon: '✏️',
+          title: 'Medicine Updated',
+          description: `${updatedMedicine.medicineName} - ${changeDescription}`,
+          category: 'medicine'
         });
         
         // Add activity tracking
         addActivity({
-          type: 'patient',
-          action: 'deleted',
-          title: 'Patient Deleted',
-          description: `Patient ${patientToDelete.indexNo} - ${patientToDelete.firstName} ${patientToDelete.lastName} removed from system`,
-          icon: '🗑️',
+          type: 'medicine',
+          action: 'updated',
+          title: 'Medicine Updated',
+          description: `${updatedMedicine.medicineName} information updated`,
+          icon: '✏️',
           details: {
-            patientName: `${patientToDelete.firstName} ${patientToDelete.lastName}`,
-            indexNo: patientToDelete.indexNo,
-            condition: patientToDelete.condition
+            medicineName: updatedMedicine.medicineName,
+            oldQuantity: oldMedicine?.quantity,
+            newQuantity: updatedMedicine.quantity,
+            changes: {
+              quantity: oldMedicine?.quantity !== updatedMedicine.quantity,
+              expiryDate: oldMedicine?.expiryDate !== updatedMedicine.expiryDate,
+              threshold: oldMedicine?.lowStockThreshold !== updatedMedicine.lowStockThreshold
+            }
           }
         });
-      }
+        
+        // If stock was replenished above threshold, clear existing stock alerts
+        const oldStock = parseInt(oldMedicine?.quantity) || 0;
+        const newStock = parseInt(updatedMedicine.quantity) || 0;
+        const threshold = parseInt(updatedMedicine.lowStockThreshold) || 0;
+        
+        if (oldStock <= threshold && newStock > threshold) {
+          clearStockAlertsForMedicine(updatedMedicine.id);
+        }
+        
+        // Clear expiry alerts for this medicine when it's updated
+        clearExpiryAlertsForMedicine(updatedMedicine.id);
+        
+        // Check for stock alerts after updating medicine
+        checkStockAlerts(updatedMedicines);
+        
+        return updatedMedicines;
+      });
+    } catch (error) {
+      console.error('Error updating medicine:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Error updating medicine: ${error.response?.data?.message || error.message}. Please try again.`);
+    }
+  };
+
+  const handleDeleteMedicine = async (medicineId) => {
+    try {
+      // Find the medicine to get details for notification
+      const medicineToDelete = medicines.find(med => (med.id === medicineId) || (med._id === medicineId));
       
-      return updatedPatients;
-    });
+      // Delete from database via API - use _id if available, otherwise use id
+      const dbId = medicineToDelete._id || medicineToDelete.id;
+      const response = await axios.delete(`http://localhost:8000/api/medicines/${dbId}`);
+      console.log('Medicine deleted from database:', response.data);
+      
+      // Update local state
+      setMedicines(prev => {
+        const updatedMedicines = prev.filter(medicine => (medicine.id !== medicineId) && (medicine._id !== medicineId));
+        
+        // Add activity tracking
+        if (medicineToDelete) {
+          addActivity({
+            type: 'medicine',
+            action: 'deleted',
+            title: 'Medicine Deleted',
+            description: `${medicineToDelete.medicineName} removed from inventory`,
+            icon: '🗑️',
+            details: {
+              medicineName: medicineToDelete.medicineName,
+              quantity: medicineToDelete.quantity,
+              category: medicineToDelete.category
+            }
+          });
+          
+          // Add notification for medicine deletion
+          addNotification({
+            type: 'warning',
+            icon: '🗑️',
+            title: 'Medicine Removed',
+            description: `${medicineToDelete.medicineName} has been removed from the medicine stock.`,
+            category: 'medicine'
+          });
+        }
+        
+        // Clear all notifications for this medicine when it's deleted
+        clearStockAlertsForMedicine(medicineId);
+        clearExpiryAlertsForMedicine(medicineId);
+        
+        // Check for stock alerts after deleting medicine
+        checkStockAlerts(updatedMedicines);
+        
+        return updatedMedicines;
+      });
+    } catch (error) {
+      console.error('Error deleting medicine:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Error deleting medicine: ${error.response?.data?.message || error.message}. Please try again.`);
+    }
+  };
+
+  const handleAddPatient = async (patientData) => {
+    try {
+      // Validate and deduct prescribed medicine quantities from stock
+      const prescribedMedicines = patientData.prescribedMedicines || [];
+      
+      if (prescribedMedicines.length > 0) {
+        // Check if sufficient stock is available for all prescribed medicines
+        const stockValidation = prescribedMedicines.every(prescribed => {
+          const medicine = medicines.find(med => med.medicineName === prescribed.name);
+          if (!medicine) {
+            alert(`Medicine "${prescribed.name}" not found in inventory.`);
+            return false;
+          }
+          const availableStock = parseInt(medicine.quantity) || 0;
+          const requestedQuantity = parseInt(prescribed.quantity) || 0;
+          
+          if (availableStock < requestedQuantity) {
+            alert(`Insufficient stock for "${prescribed.name}". Available: ${availableStock}, Requested: ${requestedQuantity}`);
+            return false;
+          }
+          return true;
+        });
+
+        if (!stockValidation) {
+          return; // Stop processing if stock validation fails
+        }
+
+        // Deduct quantities from medicine stock
+        setMedicines(prev => {
+          const updatedMedicines = prev.map(medicine => {
+            const prescribed = prescribedMedicines.find(p => p.name === medicine.medicineName);
+            if (prescribed) {
+              const currentStock = parseInt(medicine.quantity) || 0;
+              const issuedQuantity = parseInt(prescribed.quantity) || 0;
+              const newStock = currentStock - issuedQuantity;
+              
+              return {
+                ...medicine,
+                quantity: newStock.toString(),
+                stockLevel: newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock'
+              };
+            }
+            return medicine;
+          });
+          
+          // Check for stock alerts after updating quantities
+          checkStockAlerts(updatedMedicines);
+          
+          return updatedMedicines;
+        });
+
+        // Trigger notification for medicine issued
+        prescribedMedicines.forEach(prescribed => {
+          addNotification({
+            type: 'info',
+            icon: '💊',
+            title: 'Medicine Issued',
+            description: `${prescribed.quantity} units of ${prescribed.name} issued to patient ${patientData.indexNo}.`,
+            category: 'inventory'
+          });
+        });
+      }
+
+      // Create a new patient record from the admission form data
+      console.log('Received patient data in handleAdmitPatient:', patientData);
+      console.log('Lab reports in patient data:', patientData.labReports);
+      
+      const newPatient = {
+        id: patientData.id || `P${Date.now()}`, // Use provided ID or generate one
+        indexNo: patientData.indexNo,
+        name: `Patient ${patientData.indexNo}`, // Generate name from index number
+        condition: patientData.medicalCondition || patientData.condition, // Map medicalCondition to condition
+        role: patientData.role || 'Student', // Default role for admitted patients
+        age: patientData.age || null, // No default age
+        gender: patientData.gender || null, // No default gender
+        // Additional medical record data
+        admittedDate: patientData.consultedDate || patientData.admittedDate,
+        admittedTime: patientData.consultedTime || patientData.admittedTime,
+        consultedDate: patientData.consultedDate,
+        consultedTime: patientData.consultedTime,
+        reason: patientData.reasonForConsultation || patientData.reason,
+        reasonForConsultation: patientData.reasonForConsultation,
+        medicalCondition: patientData.medicalCondition,
+        prescribedMedicines: prescribedMedicines,
+        labReports: patientData.labReports || null,
+        additionalNotes: patientData.additionalNotes || ''
+      };
+      
+      console.log('Created new patient:', newPatient);
+      console.log('New patient lab reports:', newPatient.labReports);
+      
+      // Save to database via API
+      console.log('Sending patient data to API:', newPatient);
+      const response = await axios.post('http://localhost:8000/api/patient/', newPatient);
+      console.log('Patient saved to database:', response.data);
+      
+      // Update local state
+      setPatients(prev => [...prev, response.data]);
+      
+      // Add activity tracking
+      addActivity({
+        type: 'patient',
+        action: 'admitted',
+        title: 'Patient Admitted',
+        description: `Patient ${patientData.indexNo} admitted with ${patientData.condition} condition`,
+        icon: '👤',
+        details: {
+          indexNo: patientData.indexNo,
+          condition: patientData.condition,
+          prescribedMedicines: prescribedMedicines.length,
+          medicines: prescribedMedicines.map(m => m.name).join(', ')
+        }
+      });
+      
+      // Trigger notification for new patient admitted
+      addNotification({
+        type: 'success',
+        icon: '👤',
+        title: 'New Patient Admitted',
+        description: `Patient with index number ${patientData.indexNo} has been successfully admitted.`,
+        category: 'patient'
+      });
+      
+      // Navigate to patient management screen to show the new record
+      setPreviousSection(activeSection);
+      setActiveSection('patient-management');
+      
+      // Show success message
+      alert('Patient admitted successfully!');
+    } catch (error) {
+      console.error('Error saving patient:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error message:', error.message);
+      alert(`Error saving patient: ${error.response?.data?.message || error.message}. Please try again.`);
+    }
+  };
+
+  const handleUpdatePatient = async (updatedPatient) => {
+    try {
+      // Update in database via API - use _id if available, otherwise use id
+      const patientId = updatedPatient._id || updatedPatient.id;
+      const response = await axios.put(`http://localhost:8000/api/patient/${patientId}`, updatedPatient);
+      console.log('Patient updated in database:', response.data);
+      
+      // Update local state
+      setPatients(prev => prev.map(patient => 
+        patient.id === updatedPatient.id ? response.data : patient
+      ));
+    } catch (error) {
+      console.error('Error updating patient:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Error updating patient: ${error.response?.data?.message || error.message}. Please try again.`);
+    }
+  };
+
+  const handleDeletePatient = async (patientId) => {
+    try {
+      // Find the patient to get details for notification
+      const patientToDelete = patients.find(p => p.id === patientId);
+      
+      // Delete from database via API - use _id if available, otherwise use id
+      const dbId = patientToDelete._id || patientToDelete.id;
+      const response = await axios.delete(`http://localhost:8000/api/patient/${dbId}`);
+      console.log('Patient deleted from database:', response.data);
+      
+      // Update local state
+      setPatients(prev => {
+        const updatedPatients = prev.filter(patient => patient.id !== patientId);
+        
+        // Add notification for patient deletion
+        if (patientToDelete) {
+          addNotification({
+            type: 'warning',
+            icon: '👤',
+            title: 'Patient Removed',
+            description: `Patient record removed - Index: ${patientToDelete.indexNo}, Consulted: ${patientToDelete.consultedDate || patientToDelete.admittedDate || 'N/A'}`,
+            category: 'patient'
+          });
+          
+          // Add activity tracking
+          addActivity({
+            type: 'patient',
+            action: 'deleted',
+            title: 'Patient Deleted',
+            description: `Patient ${patientToDelete.indexNo} - ${patientToDelete.name} removed from system`,
+            icon: '🗑️',
+            details: {
+              patientName: patientToDelete.name,
+              indexNo: patientToDelete.indexNo,
+              condition: patientToDelete.condition
+            }
+          });
+        }
+        
+        return updatedPatients;
+      });
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+      console.error('Error response:', error.response?.data);
+      alert(`Error deleting patient: ${error.response?.data?.message || error.message}. Please try again.`);
+    }
   };
 
   const handleAddReport = (report) => {
     setRecentReports(prev => [report, ...prev.slice(0, 9)]); // Keep only last 10 reports
+  };
+
+  const handleDeleteReport = (reportId) => {
+    setRecentReports(prev => prev.filter(report => report.id !== reportId));
   };
 
   const handleLogout = () => {
@@ -488,7 +594,7 @@ const AppContent = () => {
         onUpdateMedicine={handleUpdateMedicine}
         onDeleteMedicine={handleDeleteMedicine}
       />,
-      'reports': <Reports medicines={medicines} patients={patients} medicalRecords={medicalRecords} recentReports={recentReports} onAddReport={handleAddReport} />,
+      'reports': <Reports medicines={medicines} patients={patients} medicalRecords={medicalRecords} recentReports={recentReports} onAddReport={handleAddReport} onDeleteReport={handleDeleteReport} />,
       'notifications': <Notifications />,
       'settings': <Settings key={JSON.stringify(settings)} />
     };

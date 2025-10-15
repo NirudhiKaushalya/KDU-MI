@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 exports.registerUser = async (req, res) => {
   try {
-    const { userName, indexNo, gender, dob, email, contactNo, role, intake, password } = req.body;
+    const { userName, indexNo, gender, dob, email, contactNo, role, intake, department, password, additionalNotes, photoPreview, photoFile } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: "User already exists" });
@@ -29,13 +29,36 @@ exports.registerUser = async (req, res) => {
       contactNo,
       role,
       intake,
+      department,
+      additionalNotes: additionalNotes || '',
+      photoPreview: photoPreview || null,
+      photoData: photoFile ? {
+        name: photoFile.name,
+        size: photoFile.size,
+        type: photoFile.type,
+        data: photoPreview // Store base64 data
+      } : null,
       password: hashedPassword,
       pdfFile
     });
 
     res.status(201).json({
       message: "User registered successfully",
-      user: { id: user._id, userName: user.userName, email: user.email }
+      user: {
+        _id: user._id,
+        userName: user.userName,
+        indexNo: user.indexNo,
+        gender: user.gender,
+        dob: user.dob,
+        email: user.email,
+        contactNo: user.contactNo,
+        role: user.role,
+        department: user.department,
+        intake: user.intake,
+        additionalNotes: user.additionalNotes,
+        photoPreview: user.photoPreview,
+        photoData: user.photoData
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -116,12 +139,19 @@ exports.getUserByEmail = async (req, res) => {
     }
 
     res.status(200).json({
-      user: {
-        id: user._id,
-        username: user.userName,
-        email: user.email,
-        role: user.role
-      }
+      _id: user._id,
+      userName: user.userName,
+      indexNo: user.indexNo,
+      gender: user.gender,
+      dob: user.dob,
+      email: user.email,
+      contactNo: user.contactNo,
+      role: user.role,
+      department: user.department,
+      intake: user.intake,
+      additionalNotes: user.additionalNotes,
+      photoPreview: user.photoPreview,
+      photoData: user.photoData
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -149,13 +179,19 @@ exports.updateUser = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "User updated successfully",
-      user: {
-        id: updatedUser._id,
-        username: updatedUser.userName,
-        email: updatedUser.email,
-        role: updatedUser.role
-      }
+      _id: updatedUser._id,
+      userName: updatedUser.userName,
+      indexNo: updatedUser.indexNo,
+      gender: updatedUser.gender,
+      dob: updatedUser.dob,
+      email: updatedUser.email,
+      contactNo: updatedUser.contactNo,
+      role: updatedUser.role,
+      department: updatedUser.department,
+      intake: updatedUser.intake,
+      additionalNotes: updatedUser.additionalNotes,
+      photoPreview: updatedUser.photoPreview,
+      photoData: updatedUser.photoData
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

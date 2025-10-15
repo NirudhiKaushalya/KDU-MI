@@ -54,7 +54,7 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
   };
 
   const handleUpdate = (medicineId) => {
-    const medicine = medicines.find(med => med.id === medicineId);
+    const medicine = medicines.find(med => (med.id === medicineId) || (med._id === medicineId));
     if (medicine) {
       setSelectedMedicine(medicine);
       setShowEditModal(true);
@@ -79,6 +79,25 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
   };
 
   const categories = ['All Categories', 'Analgesics', 'Antibiotics', 'Antihistamines', 'Antiseptics', 'Vitamins'];
+
+  // Format date to "Month Date Year" format
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      
+      const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      };
+      return date.toLocaleDateString('en-US', options);
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
 
   return (
     <div className={styles.medicineStocks}>
@@ -155,7 +174,7 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
                       </span>
                     </td>
                     <td className={styles.expiryDate}>
-                      {medicine.expiryDate}
+                      {formatDate(medicine.expiryDate)}
                       {new Date(medicine.expiryDate) < new Date() && (
                         <div className={styles.expiredBadge}>Expired</div>
                       )}
@@ -164,14 +183,14 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
                       <div className={styles.actionButtons}>
                         <button 
                           className={`${styles.btnIcon} ${styles.btnUpdate}`}
-                          onClick={() => handleUpdate(medicine.id)}
+                          onClick={() => handleUpdate(medicine._id || medicine.id)}
                           title="Update Medicine"
                         >
                           <i className="fas fa-edit"></i>
                         </button>
                         <button 
                           className={`${styles.btnIcon} ${styles.btnDelete}`}
-                          onClick={() => handleDelete(medicine.id)}
+                          onClick={() => handleDelete(medicine._id || medicine.id)}
                           title="Delete Medicine"
                         >
                           <i className="fas fa-trash"></i>

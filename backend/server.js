@@ -29,10 +29,10 @@ const PORT = process.env.PORT || 8000;
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-here";
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected successfully"))
+  .then(() => console.log("MongoDB connected successfully"))
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
-    console.log("⚠️  Server will continue without MongoDB connection");
+    console.error("MongoDB connection error:", err.message);
+    console.log("Server will continue without MongoDB connection");
   });
 
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import styles from './Registration.module.scss';
 
 const Registration = ({ onBackToLogin, onRegister }) => {
@@ -137,30 +138,37 @@ const Registration = ({ onBackToLogin, onRegister }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Here you would typically send the data to a backend
-      const registrationData = { 
-        ...formData, 
-        photoFile: photoFile ? {
-          name: photoFile.name,
-          size: photoFile.size,
-          type: photoFile.type
-        } : null,
-        photoPreview: photoPreview // Include the base64 photo data
-      };
-      console.log('Registration data:', registrationData);
-      
-      // For demo purposes, we'll just show a success message
-      alert('Registration successful! You can now login with your credentials.');
-      
-      // Navigate back to login
-      if (onRegister) {
-        onRegister(registrationData);
-      } else {
-        onBackToLogin();
+      try {
+        const registrationData = { 
+          ...formData, 
+          photoFile: photoFile ? {
+            name: photoFile.name,
+            size: photoFile.size,
+            type: photoFile.type
+          } : null,
+          photoPreview: photoPreview // Include the base64 photo data
+        };
+        console.log('Registration data:', registrationData);
+        
+        // Send data to backend API
+        const response = await axios.post('http://localhost:8000/api/user/register', registrationData);
+        console.log('Registration successful:', response.data);
+        
+        alert('Registration successful! You can now login with your credentials.');
+        
+        // Navigate back to login
+        if (onRegister) {
+          onRegister(registrationData);
+        } else {
+          onBackToLogin();
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        alert(error.response?.data?.message || 'Registration failed. Please try again.');
       }
     }
   };

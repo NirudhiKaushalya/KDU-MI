@@ -5,10 +5,12 @@ const{
     getReports,
     getReportById,
     updateReport,
-    deleteReport
+    deleteReport,
+    generateReport
 } = require("../controllers/reportController");
 
 router.post("/",createReport);  //create
+router.post("/generate",generateReport);  //generate report from data
 router.get("/",getReports);     //Read all
 router.get("/:id", getReportById);  //Read one
 router.put("/:id",updateReport);     //update

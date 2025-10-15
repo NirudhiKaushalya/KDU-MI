@@ -88,6 +88,13 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           });
         }
         
+        // Filter by Index No
+        if (filters.patientId) {
+          filteredRecords = filteredRecords.filter(record => {
+            return record.indexNo && record.indexNo.toLowerCase().includes(filters.patientId.toLowerCase());
+          });
+        }
+        
         // Filter by status (if needed)
         if (filters.status) {
           filteredRecords = filteredRecords.filter(record => {
@@ -100,7 +107,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           title: 'Patient Medical Records Report',
           description: 'Comprehensive report of patient medical history and records',
           data: filteredRecords,
-          columns: ['ID', 'Index No', 'Condition', 'Consulted Date', 'Consulted Time', 'Reason', 'Role']
+          columns: ['Index No', 'Condition', 'Consulted Date', 'Consulted Time', 'Reason', 'Role']
         };
         return patientReport;
       case 'Inventory Report':
@@ -108,7 +115,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           title: 'Medicine Inventory Report',
           description: 'Current stock levels and inventory status of all medicines',
           data: medicines,
-          columns: ['ID', 'Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
+          columns: ['Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
         };
       case 'Low Stock Report':
         return {
@@ -125,7 +132,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
             
             return hasLowStock || isLowStockLevel;
           }),
-          columns: ['ID', 'Medicine Name', 'Category', 'Brand', 'Current Quantity', 'Low Stock Threshold', 'Stock Level']
+          columns: ['Medicine Name', 'Category', 'Brand', 'Current Quantity', 'Low Stock Threshold', 'Stock Level']
         };
       case 'Expiry Report':
         return {
@@ -137,7 +144,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
             const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
             return daysUntilExpiry <= 90; // Within 90 days
           }),
-          columns: ['ID', 'Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry']
+          columns: ['Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry']
         };
       default:
         return { title: 'Report', description: '', data: [], columns: [] };
@@ -248,7 +255,19 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
   const getFilterFields = () => {
     switch (reportType) {
       case 'Patient Report':
-        return null;
+        return (
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Index No</label>
+            <input
+              type="text"
+              name="patientId"
+              value={filters.patientId}
+              onChange={handleInputChange}
+              placeholder="Enter patient index number"
+              className={styles.filterInput}
+            />
+          </div>
+        );
       case 'Inventory Report':
         return (
           <div className={styles.filterGroup}>

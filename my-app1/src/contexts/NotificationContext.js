@@ -125,7 +125,7 @@ export const NotificationProvider = ({ children }) => {
           title: `Low Stock Alert: ${medicine.medicineName}`,
           description: `Stock for ${medicine.medicineName} is running low. Current quantity: ${currentStock} units (Threshold: ${lowStockThreshold}).`,
           category: 'stock',
-          medicineId: medicine.id,
+          medicineId: medicine._id || medicine.id,
           medicineName: medicine.medicineName
         });
       }
@@ -136,9 +136,9 @@ export const NotificationProvider = ({ children }) => {
           type: 'expiry',
           icon: '📅',
           title: `Expiry Alert: ${medicine.medicineName}`,
-          description: `${medicine.medicineName} is expiring in ${daysUntilExpiry} days (${medicine.expiryDate}).`,
+          description: `${medicine.medicineName} is expiring in ${daysUntilExpiry} days (${new Date(medicine.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}).`,
           category: 'expiry',
-          medicineId: medicine.id,
+          medicineId: medicine._id || medicine.id,
           medicineName: medicine.medicineName
         });
       }
@@ -149,9 +149,9 @@ export const NotificationProvider = ({ children }) => {
           type: 'danger',
           icon: '❌',
           title: `Expired Medicine: ${medicine.medicineName}`,
-          description: `${medicine.medicineName} has expired on ${medicine.expiryDate}. Please remove from inventory.`,
+          description: `${medicine.medicineName} has expired on ${new Date(medicine.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}. Please remove from inventory.`,
           category: 'expiry',
-          medicineId: medicine.id,
+          medicineId: medicine._id || medicine.id,
           medicineName: medicine.medicineName
         });
       }

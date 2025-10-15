@@ -3,7 +3,7 @@ import styles from './Reports.module.scss';
 import ReportModal from '../../modals/ReportModal/ReportModal';
 import ReportViewerModal from '../../modals/ReportViewerModal/ReportViewerModal';
 
-const Reports = ({ medicines = [], patients = [], medicalRecords = [], recentReports = [], onAddReport }) => {
+const Reports = ({ medicines = [], patients = [], medicalRecords = [], recentReports = [], onAddReport, onDeleteReport }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState('');
   const [showViewerModal, setShowViewerModal] = useState(false);
@@ -59,7 +59,7 @@ const Reports = ({ medicines = [], patients = [], medicalRecords = [], recentRep
 
   const handleDeleteReport = (reportId) => {
     if (window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
-      setRecentReports(prev => prev.filter(report => report.id !== reportId));
+      onDeleteReport(reportId);
       alert('Report deleted successfully!');
     }
   };

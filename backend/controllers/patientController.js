@@ -1,9 +1,16 @@
 const Patient = require("../models/patient");
 
-//create new patient
+//create new patient (admit patient)
 exports.createPatient = async (req, res) => {
     try {
-        const patient = new Patient(req.body);
+        const patientData = req.body;
+        
+        // Generate unique ID if not provided
+        if (!patientData.id) {
+            patientData.id = `P${Date.now()}`;
+        }
+
+        const patient = new Patient(patientData);
         await patient.save();
         res.status(201).json(patient);
         } catch (error) {
@@ -72,5 +79,19 @@ exports.deletePatient = async (req, res) => {
         });
     }catch (error) {
         res.status(500).json({message: error.message});
+    }
+};
+
+// Get patient by index number
+exports.getPatientByIndexNo = async (req, res) => {
+    try {
+        const { indexNo } = req.params;
+        const patient = await Patient.findOne({ indexNo });
+        if (!patient) {
+            return res.status(404).json({ message: "Patient not found" });
+        }
+        res.json(patient);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };

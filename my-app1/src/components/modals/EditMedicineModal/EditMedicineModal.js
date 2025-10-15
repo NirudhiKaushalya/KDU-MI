@@ -91,6 +91,8 @@ const EditMedicineModal = ({ isOpen, onClose, medicine, onUpdateMedicine }) => {
 
       const updatedMedicine = {
         ...formData,
+        _id: medicine._id, // Preserve the database ID
+        id: medicine.id, // Preserve the frontend ID
         medicineName: formData.name, // Map name to medicineName for consistency
         quantity: parseInt(formData.quantity),
         lowStockThreshold: parseInt(formData.lowStockThreshold),

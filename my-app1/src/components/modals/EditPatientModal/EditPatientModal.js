@@ -108,6 +108,8 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
     if (validateForm()) {
       const updatedPatient = {
         ...formData,
+        _id: patient._id, // Preserve the database ID
+        id: patient.id, // Preserve the frontend ID
         age: parseInt(formData.age)
       };
 
