@@ -62,7 +62,24 @@ exports.updateMedicine = async (req, res) => {
             {new: true}
         );
         if(!updated) return res.status(404).json({message: "Medicine not found"});
-        res.json(updated);
+        
+        // Create notification for medicine update
+        const Notification = require("../models/notification");
+        const notification = new Notification({
+            notificationID: Date.now(),
+            medicineID: req.params.id,
+            message: `Medicine "${updated.medicineName}" has been updated`,
+            type: 'medicine_updated',
+            category: 'medicine'
+        });
+        await notification.save();
+        
+        res.json({
+            medicine: updated,
+            notification: {
+                message: "Medicine updated and notification sent"
+            }
+        });
     } catch (error) {
         res.status(400).json({message:error.message});
     }

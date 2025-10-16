@@ -111,36 +111,36 @@ const UserDashboard = ({ userName = 'User' }) => {
   };
 
   const getHealthTips = (bmiValue, category) => {
-    // Return an array of short, actionable tips based on BMI category
+    // Return an array of objects with text and icons based on BMI category
     if (!bmiValue) return [];
     switch (category) {
       case 'Underweight':
         return [
-          'Increase calorie intake with nutrient-dense foods (nuts, avocados, dairy).',
-          'Eat small, frequent meals and include protein with each meal.',
-          'Consider resistance training to build healthy muscle mass.',
-          'Consult a healthcare provider or dietitian if unexplained weight loss occurs.'
+          { text: 'Increase calorie intake with nutrient-dense foods (nuts, avocados, dairy).', icon: '🥜', color: '#f59e0b' },
+          { text: 'Eat small, frequent meals and include protein with each meal.', icon: '🍽️', color: '#10b981' },
+          { text: 'Consider resistance training to build healthy muscle mass.', icon: '💪', color: '#3b82f6' },
+          { text: 'Consult a healthcare provider or dietitian if unexplained weight loss occurs.', icon: '👩‍⚕️', color: '#ef4444' }
         ];
       case 'Normal weight':
         return [
-          'Maintain a balanced diet rich in vegetables, lean protein and whole grains.',
-          'Aim for at least 150 minutes of moderate exercise per week.',
-          'Keep hydrated and prioritise sleep for recovery and metabolism.',
-          'Continue regular health check-ups and maintain current habits.'
+          { text: 'Maintain a balanced diet rich in vegetables, lean protein and whole grains.', icon: '🥗', color: '#10b981' },
+          { text: 'Aim for at least 150 minutes of moderate exercise per week.', icon: '🏃‍♀️', color: '#3b82f6' },
+          { text: 'Keep hydrated and prioritise sleep for recovery and metabolism.', icon: '💧', color: '#06b6d4' },
+          { text: 'Continue regular health check-ups and maintain current habits.', icon: '✅', color: '#10b981' }
         ];
       case 'Overweight':
         return [
-          'Reduce portion sizes and limit processed/high-sugar foods.',
-          'Increase daily physical activity (brisk walking, cycling, swimming).',
-          'Incorporate strength training twice a week to improve body composition.',
-          'Set gradual goals (0.5-1 kg/month) and track progress.'
+          { text: 'Reduce portion sizes and limit processed/high-sugar foods.', icon: '🍎', color: '#10b981' },
+          { text: 'Increase daily physical activity (brisk walking, cycling, swimming).', icon: '🚴‍♀️', color: '#3b82f6' },
+          { text: 'Incorporate strength training twice a week to improve body composition.', icon: '🏋️‍♀️', color: '#8b5cf6' },
+          { text: 'Set gradual goals (0.5-1 kg/month) and track progress.', icon: '📊', color: '#f59e0b' }
         ];
       case 'Obese':
         return [
-          'Consult a healthcare professional for personalised advice and screening.',
-          'Adopt a structured weight-loss plan with diet and exercise supervision.',
-          'Address other risk factors (blood pressure, blood sugar, lipids) with your doctor.',
-          'Seek support from a dietitian or a supervised program for sustainable change.'
+          { text: 'Consult a healthcare professional for personalised advice and screening.', icon: '👨‍⚕️', color: '#ef4444' },
+          { text: 'Adopt a structured weight-loss plan with diet and exercise supervision.', icon: '📋', color: '#3b82f6' },
+          { text: 'Address other risk factors (blood pressure, blood sugar, lipids) with your doctor.', icon: '🩺', color: '#f59e0b' },
+          { text: 'Seek support from a dietitian or a supervised program for sustainable change.', icon: '🤝', color: '#10b981' }
         ];
       default:
         return [];
@@ -180,6 +180,35 @@ const UserDashboard = ({ userName = 'User' }) => {
               timestamp: notification.timestamp,
               icon: '📋',
               color: '#3b82f6'
+            });
+            seenActivities.add(activityId);
+          }
+        } else if (notification.category === 'patient' && notification.type === 'deletion_request_received') {
+          const activityId = `deletion-${notification.id}`;
+          if (!seenActivities.has(activityId)) {
+            activities.push({
+              id: activityId,
+              type: 'deletion',
+              action: 'Deletion Request Received',
+              description: 'You have received a deletion request for your medical record',
+              timestamp: notification.timestamp,
+              icon: '⚠️',
+              color: '#f59e0b'
+            });
+            seenActivities.add(activityId);
+          }
+        } else if (notification.category === 'patient' && (notification.type === 'deletion_request_approved' || notification.type === 'deletion_request_rejected')) {
+          const activityId = `deletion-response-${notification.id}`;
+          if (!seenActivities.has(activityId)) {
+            const isApproved = notification.type === 'deletion_request_approved';
+            activities.push({
+              id: activityId,
+              type: 'deletion',
+              action: `Deletion Request ${isApproved ? 'Approved' : 'Rejected'}`,
+              description: `Your medical record deletion request has been ${isApproved ? 'approved' : 'rejected'}`,
+              timestamp: notification.timestamp,
+              icon: isApproved ? '✅' : '❌',
+              color: isApproved ? '#10b981' : '#ef4444'
             });
             seenActivities.add(activityId);
           }
@@ -308,7 +337,12 @@ const UserDashboard = ({ userName = 'User' }) => {
                   <p className={styles.tipsCategory}><strong>Category:</strong> {bmiCategory} <span style={{color: getBMIColor()}}>({bmi})</span></p>
                   <ul className={styles.tipsList}>
                     {getHealthTips(parseFloat(bmi), bmiCategory).map((tip, idx) => (
-                      <li key={idx}>{tip}</li>
+                      <li key={idx} className={styles.tipItem}>
+                        <div className={styles.tipIcon} style={{ backgroundColor: `${tip.color}20`, color: tip.color }}>
+                          <span>{tip.icon}</span>
+                        </div>
+                        <span className={styles.tipText}>{tip.text}</span>
+                      </li>
                     ))}
                   </ul>
                 </div>

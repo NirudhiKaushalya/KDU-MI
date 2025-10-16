@@ -346,23 +346,9 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
               {isEditMode ? 'Close' : 'Cancel'}
             </button>
             {isEditMode && (
-              <>
-                <button 
-                  type="button" 
-                  className={styles.testButton} 
-                  onClick={() => {
-                    console.log('Test button clicked');
-                    const testFile = { name: 'Test Lab Report.pdf', size: 1024 };
-                    handleViewLabReport(testFile);
-                  }}
-                  title="Test lab report viewer"
-                >
-                  🧪 Test Viewer
-                </button>
-                <button type="button" className={styles.downloadButton} onClick={handleDownloadPDF}>
-                  📄 Download Record
-                </button>
-              </>
+              <button type="button" className={styles.downloadButton} onClick={handleDownloadPDF}>
+                📄 Download Record
+              </button>
             )}
             {!isEditMode && (
               <button type="submit" className={styles.saveButton}>

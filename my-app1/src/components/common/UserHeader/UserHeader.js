@@ -52,17 +52,6 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
             )}
           </button>
           
-          <button 
-            className={styles.deletionRequestButton}
-            onClick={onNavigateToDeletionRequests}
-            title="View deletion requests"
-          >
-            <i className="fas fa-exclamation-triangle"></i>
-            {deletionRequestCount > 0 && (
-              <span className={styles.deletionRequestBadge}>{deletionRequestCount}</span>
-            )}
-          </button>
-          
           <div className={styles.userProfile} ref={dropdownRef}>
             <div 
               className={styles.userAvatar}

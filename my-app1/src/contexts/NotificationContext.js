@@ -44,11 +44,17 @@ export const NotificationProvider = ({ children }) => {
     }
     
     // Regular users only see user-relevant notifications
-    const userRelevantCategories = ['patient', 'profile', 'success'];
+    const userRelevantCategories = ['patient', 'profile', 'success', 'medical-record'];
     return userRelevantCategories.includes(notification.category);
   }, [userType]);
 
   const addNotification = useCallback((notification) => {
+    console.log('addNotification called with:', {
+      notification,
+      userType,
+      shouldShow: shouldShowNotification(notification)
+    });
+    
     // Check if notification should be shown to current user
     if (!shouldShowNotification(notification)) {
       console.log('Notification filtered out for user type:', userType, notification);
@@ -138,21 +144,39 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const checkStockAlerts = useCallback((medicines) => {
-    // Early return if both stock and expiry alerts are disabled
-    if (!settings.lowStockAlertEnabled && !settings.expiryAlertEnabled) {
-      console.log('All stock alerts are disabled in settings');
+    console.log('checkStockAlerts called with medicines:', medicines.length, 'settings:', settings);
+    
+    // Check if we have medicines to process
+    if (!medicines || medicines.length === 0) {
+      console.log('No medicines to check for alerts');
       return;
     }
 
+    // Check if settings are available
+    if (!settings) {
+      console.log('Settings not available, using default values');
+    }
+
+    const lowStockEnabled = settings?.lowStockAlertEnabled !== false; // Default to true if not set
+    const expiryEnabled = settings?.expiryAlertEnabled !== false; // Default to true if not set
+    const expiryDays = settings?.expiryAlertDays || 7; // Default to 7 days
+
+    console.log('Alert settings - Low stock enabled:', lowStockEnabled, 'Expiry enabled:', expiryEnabled, 'Expiry days:', expiryDays);
+
     medicines.forEach(medicine => {
+      console.log('Checking medicine:', medicine.medicineName, 'quantity:', medicine.quantity, 'threshold:', medicine.lowStockThreshold, 'expiry:', medicine.expiryDate);
+      
       const currentStock = parseInt(medicine.quantity) || 0;
-      const lowStockThreshold = parseInt(medicine.lowStockThreshold) || 0;
+      const lowStockThreshold = parseInt(medicine.lowStockThreshold) || 10; // Default threshold
       const expiryDate = new Date(medicine.expiryDate);
       const today = new Date();
       const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
 
+      console.log('Medicine analysis - Current stock:', currentStock, 'Threshold:', lowStockThreshold, 'Days until expiry:', daysUntilExpiry);
+
       // Check for low stock (only if enabled in settings and stock is below threshold)
-      if (settings.lowStockAlertEnabled && currentStock <= lowStockThreshold && lowStockThreshold > 0) {
+      if (lowStockEnabled && currentStock <= lowStockThreshold && lowStockThreshold > 0) {
+        console.log('Adding low stock alert for:', medicine.medicineName);
         addNotification({
           type: 'warning',
           icon: '⚠️',
@@ -165,7 +189,8 @@ export const NotificationProvider = ({ children }) => {
       }
 
       // Check for expiry (using settings for alert days, only if enabled)
-      if (settings.expiryAlertEnabled && daysUntilExpiry <= settings.expiryAlertDays && daysUntilExpiry > 0) {
+      if (expiryEnabled && daysUntilExpiry <= expiryDays && daysUntilExpiry > 0) {
+        console.log('Adding expiry alert for:', medicine.medicineName, 'expiring in', daysUntilExpiry, 'days');
         addNotification({
           type: 'expiry',
           icon: '📅',
@@ -179,6 +204,7 @@ export const NotificationProvider = ({ children }) => {
 
       // Check for expired medicines (always show regardless of settings)
       if (daysUntilExpiry < 0) {
+        console.log('Adding expired medicine alert for:', medicine.medicineName);
         addNotification({
           type: 'danger',
           icon: '❌',
@@ -190,7 +216,7 @@ export const NotificationProvider = ({ children }) => {
         });
       }
     });
-  }, [addNotification, settings.lowStockAlertEnabled, settings.expiryAlertEnabled, settings.expiryAlertDays]);
+  }, [addNotification, settings]);
 
   const getNewNotificationsCount = useCallback(() => {
     return notifications.filter(notification => notification.status === 'new').length;

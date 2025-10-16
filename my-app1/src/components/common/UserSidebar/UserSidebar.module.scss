@@ -81,6 +81,23 @@
   flex: 1;
 }
 
+.personalInfoHighlight {
+  .menuIcon {
+    color: #87CEEB; // Light blue color
+    text-shadow: 0 0 12px rgba(135, 206, 235, 0.8), 0 0 20px rgba(135, 206, 235, 0.4);
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+  }
+  
+  &:hover {
+    .menuIcon {
+      color: #B0E0E6; // Slightly lighter blue on hover
+      text-shadow: 0 0 16px rgba(176, 224, 230, 1), 0 0 25px rgba(176, 224, 230, 0.6);
+      transform: scale(1.15);
+    }
+  }
+}
+
 
 
 // Responsive design

@@ -69,6 +69,44 @@ const AppContent = () => {
         console.log('Loaded medicines from database:', medicinesResponse.data);
       } catch (error) {
         console.log('Database not available, using local state only');
+        
+        // Add some test medicines for alert testing if no medicines exist
+        if (medicines.length === 0) {
+          const testMedicines = [
+            {
+              id: 'TEST001',
+              medicineName: 'Paracetamol',
+              category: 'Analgesics',
+              brand: 'Generic',
+              quantity: 5, // Low stock
+              lowStockThreshold: 10,
+              expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days from now
+              stockLevel: 'Low Stock'
+            },
+            {
+              id: 'TEST002',
+              medicineName: 'Amoxicillin',
+              category: 'Antibiotics',
+              brand: 'Generic',
+              quantity: 15,
+              lowStockThreshold: 20,
+              expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days from now
+              stockLevel: 'In Stock'
+            },
+            {
+              id: 'TEST003',
+              medicineName: 'Vitamin C',
+              category: 'Vitamins',
+              brand: 'Generic',
+              quantity: 2, // Very low stock
+              lowStockThreshold: 15,
+              expiryDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Expired 2 days ago
+              stockLevel: 'Low Stock'
+            }
+          ];
+          setMedicines(testMedicines);
+          console.log('Added test medicines for alert testing:', testMedicines);
+        }
       }
     };
 
@@ -93,6 +131,45 @@ const AppContent = () => {
 
     fetchDeletionRequestCount();
   }, [userType, userData?.indexNo]);
+
+  // Fetch notifications from backend for users
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (userType === 'user' && userData?.indexNo) {
+        try {
+          const response = await axios.get(`http://localhost:8000/api/notifications/patient/${userData.indexNo}`);
+          console.log('Fetched notifications from backend:', response.data);
+          
+          // Convert backend notifications to frontend format
+          const formattedNotifications = response.data.map(notification => ({
+            id: notification.notificationID || notification._id,
+            type: notification.type === 'deletion_request_received' ? 'warning' : 
+                  notification.type === 'deletion_request_approved' ? 'success' : 
+                  notification.type === 'deletion_request_rejected' ? 'warning' : 'info',
+            icon: notification.type === 'deletion_request_received' ? '⚠️' : 
+                  notification.type === 'deletion_request_approved' ? '✅' : 
+                  notification.type === 'deletion_request_rejected' ? '❌' : '📋',
+            title: notification.type === 'deletion_request_received' ? 'Deletion Request Received' : 
+                   notification.type === 'deletion_request_approved' ? 'Deletion Request Approved' : 
+                   notification.type === 'deletion_request_rejected' ? 'Deletion Request Rejected' : 'Notification',
+            description: notification.message,
+            category: notification.category || 'patient',
+            timestamp: notification.createdAt || notification.timestamp || new Date().toISOString(),
+            status: 'new'
+          }));
+          
+          // Add notifications to the context
+          formattedNotifications.forEach(notification => {
+            addNotification(notification);
+          });
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
+        }
+      }
+    };
+
+    fetchNotifications();
+  }, [userType, userData?.indexNo, addNotification]);
 
   // Function to refresh patient data when a deletion request is approved
   const handlePatientDeleted = async () => {
@@ -123,8 +200,9 @@ const AppContent = () => {
 
   // Check for stock alerts whenever medicines change (only for admin users)
   useEffect(() => {
+    console.log('Medicines changed, checking alerts. Medicines count:', medicines.length, 'User type:', userType);
     if (medicines.length > 0 && userType === 'admin') {
-      // Only check for stock alerts for admin users, don't clear all notifications
+      console.log('Triggering checkStockAlerts for admin user');
       checkStockAlerts(medicines);
     }
   }, [medicines, checkStockAlerts, userType]);
@@ -247,17 +325,45 @@ const AppContent = () => {
 
   const handleUpdateMedicine = async (updatedMedicine) => {
     try {
-      // Update in database via API - use _id if available, otherwise use id
-      const medicineId = updatedMedicine._id || updatedMedicine.id;
-      const response = await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, updatedMedicine);
-      console.log('Medicine updated in database:', response.data);
+      // Check if this is a database medicine (has _id) or local medicine (only has id)
+      const isDatabaseMedicine = updatedMedicine._id && updatedMedicine._id !== 'undefined';
+      const medicineId = isDatabaseMedicine ? updatedMedicine._id : updatedMedicine.id;
+      
+      console.log('Updating medicine:', {
+        medicineId,
+        isDatabaseMedicine,
+        has_id: !!updatedMedicine._id,
+        has_id_value: updatedMedicine._id,
+        id_value: updatedMedicine.id
+      });
+      
+      let response;
+      if (isDatabaseMedicine) {
+        // Update existing database medicine
+        response = await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, updatedMedicine);
+        console.log('Medicine updated in database:', response.data);
+      } else {
+        // Create new medicine in database (local medicine being updated)
+        response = await axios.post('http://localhost:8000/api/medicines/', updatedMedicine);
+        console.log('Medicine created in database:', response.data);
+      }
       
       // Update local state
       setMedicines(prev => {
         const oldMedicine = prev.find(med => (med.id === updatedMedicine.id) || (med._id === updatedMedicine._id));
-        const updatedMedicines = prev.map(medicine => 
-          ((medicine.id === updatedMedicine.id) || (medicine._id === updatedMedicine._id)) ? response.data : medicine
-        );
+        
+        let updatedMedicines;
+        if (isDatabaseMedicine) {
+          // Update existing medicine with database response
+          updatedMedicines = prev.map(medicine => 
+            ((medicine.id === updatedMedicine.id) || (medicine._id === updatedMedicine._id)) ? response.data.medicine : medicine
+          );
+        } else {
+          // Replace local medicine with database medicine (now has _id)
+          updatedMedicines = prev.map(medicine => 
+            (medicine.id === updatedMedicine.id) ? response.data : medicine
+          );
+        }
         
         // Detect what fields were changed
         const changes = [];
@@ -283,12 +389,19 @@ const AppContent = () => {
         // Add notification for medicine update
         const changeDescription = changes.length > 0 
           ? `Updated: ${changes.join(', ')}`
-          : 'Medicine information updated successfully';
+          : isDatabaseMedicine ? 'Medicine information updated successfully' : 'Medicine saved to database';
+          
+        console.log('Adding medicine update notification:', {
+          userType,
+          medicineName: updatedMedicine.medicineName,
+          changeDescription,
+          isDatabaseMedicine
+        });
           
         addNotification({
           type: 'success',
           icon: '✏️',
-          title: 'Medicine Updated',
+          title: isDatabaseMedicine ? 'Medicine Updated' : 'Medicine Saved',
           description: `${updatedMedicine.medicineName} - ${changeDescription}`,
           category: 'medicine'
         });
@@ -296,9 +409,9 @@ const AppContent = () => {
         // Add activity tracking
         addActivity({
           type: 'medicine',
-          action: 'updated',
-          title: 'Medicine Updated',
-          description: `${updatedMedicine.medicineName} information updated`,
+          action: isDatabaseMedicine ? 'updated' : 'created',
+          title: isDatabaseMedicine ? 'Medicine Updated' : 'Medicine Saved',
+          description: `${updatedMedicine.medicineName} ${isDatabaseMedicine ? 'information updated' : 'saved to database'}`,
           icon: '✏️',
           details: {
             medicineName: updatedMedicine.medicineName,
@@ -334,7 +447,18 @@ const AppContent = () => {
     } catch (error) {
       console.error('Error updating medicine:', error);
       console.error('Error response:', error.response?.data);
-      alert(`Error updating medicine: ${error.response?.data?.message || error.message}. Please try again.`);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message.includes('Cast to ObjectId failed')) {
+        errorMessage = 'Invalid medicine ID. Please refresh the page and try again.';
+      } else if (error.message.includes('Network Error')) {
+        errorMessage = 'Unable to connect to server. Please check your connection.';
+      }
+      
+      alert(`Error updating medicine: ${errorMessage}`);
     }
   };
 
@@ -458,6 +582,36 @@ const AppContent = () => {
           
           return updatedMedicines;
         });
+
+        // Update medicine quantities in database
+        try {
+          const medicineUpdatePromises = prescribedMedicines.map(async (prescribed) => {
+            const medicine = medicines.find(med => med.medicineName === prescribed.name);
+            if (medicine) {
+              const currentStock = parseInt(medicine.quantity) || 0;
+              const issuedQuantity = parseInt(prescribed.quantity) || 0;
+              const newStock = currentStock - issuedQuantity;
+              
+              const updatedMedicineData = {
+                ...medicine,
+                quantity: newStock.toString(),
+                stockLevel: newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock'
+              };
+              
+              // Use _id if available, otherwise use id
+              const medicineId = medicine._id || medicine.id;
+              const response = await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, updatedMedicineData);
+              console.log(`Updated medicine ${prescribed.name} in database:`, response.data);
+              return response.data;
+            }
+          });
+          
+          await Promise.all(medicineUpdatePromises);
+          console.log('All medicine quantities updated in database successfully');
+        } catch (error) {
+          console.error('Error updating medicine quantities in database:', error);
+          alert(`Warning: Medicine quantities were updated in the display but failed to save to database. Please refresh and try again.`);
+        }
 
         // Trigger notification for medicine issued
         prescribedMedicines.forEach(prescribed => {

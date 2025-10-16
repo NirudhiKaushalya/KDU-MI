@@ -23,6 +23,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
         [name]: value
       }));
     } else {
+      console.log('Filter changed:', name, '=', value);
       setFilters(prev => ({
         ...prev,
         [name]: value
@@ -111,10 +112,24 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
         };
         return patientReport;
       case 'Inventory Report':
+        // Apply category filter to medicines
+        let filteredMedicines = [...medicines];
+        
+        console.log('Inventory Report - Original medicines count:', medicines.length);
+        console.log('Inventory Report - Selected category filter:', filters.category);
+        
+        // Filter by category
+        if (filters.category) {
+          filteredMedicines = filteredMedicines.filter(medicine => 
+            medicine.category === filters.category
+          );
+          console.log('Inventory Report - Filtered medicines count:', filteredMedicines.length);
+        }
+        
         return {
           title: 'Medicine Inventory Report',
           description: 'Current stock levels and inventory status of all medicines',
-          data: medicines,
+          data: filteredMedicines,
           columns: ['Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
         };
       case 'Low Stock Report':
@@ -282,6 +297,9 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
               <option value="Analgesics">Analgesics</option>
               <option value="Antibiotics">Antibiotics</option>
               <option value="Antihistamines">Antihistamines</option>
+              <option value="Antiseptics">Antiseptics</option>
+              <option value="Vitamins">Vitamins</option>
+              <option value="Other">Other</option>
             </select>
           </div>
         );

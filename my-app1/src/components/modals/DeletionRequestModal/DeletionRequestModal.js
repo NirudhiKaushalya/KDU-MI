@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import styles from './DeletionRequestModal.module.scss';
+import { useNotifications } from '../../../contexts/NotificationContext';
 
 const DeletionRequestModal = ({ isOpen, onClose, patient, onRequestSent }) => {
+  const { addNotification } = useNotifications();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Predefined reasons for deletion requests
+  const deletionReasons = [
+    'Patient requested deletion',
+    'Incorrect information recorded',
+    'Duplicate record found',
+    'Privacy concerns',
+    'Data accuracy issues',
+    'Record created in error',
+    'Compliance requirements',
+    'Other administrative reason'
+  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,6 +43,16 @@ const DeletionRequestModal = ({ isOpen, onClose, patient, onRequestSent }) => {
       });
 
       console.log('Deletion request sent:', response.data);
+      
+      // Add notification for deletion request creation
+      addNotification({
+        type: 'info',
+        icon: '📋',
+        title: 'Deletion Request Sent',
+        description: `Deletion request sent to patient ${patient.indexNo}. They will be notified to approve or reject the request.`,
+        category: 'patient'
+      });
+      
       alert('Deletion request sent successfully! The patient will be notified and can approve or reject the request.');
       
       if (onRequestSent) {
@@ -102,15 +126,20 @@ const DeletionRequestModal = ({ isOpen, onClose, patient, onRequestSent }) => {
               <label htmlFor="reason" className={styles.formLabel}>
                 Reason for Deletion Request *
               </label>
-              <textarea
+              <select
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className={styles.textarea}
-                placeholder="Please provide a detailed reason for requesting the deletion of this medical record..."
-                rows={4}
+                className={styles.selectInput}
                 required
-              />
+              >
+                <option value="">Select a reason for deletion</option>
+                {deletionReasons.map((reasonOption, index) => (
+                  <option key={index} value={reasonOption}>
+                    {reasonOption}
+                  </option>
+                ))}
+              </select>
               {error && <span className={styles.errorText}>{error}</span>}
             </div>
 

@@ -32,6 +32,18 @@ exports.getNotificationById = async (req,res) => {
        }
 };
 
+// Get notifications by patient ID
+exports.getNotificationsByPatient = async (req, res) => {
+    try {
+        const { patientId } = req.params;
+        const notifications = await Notification.find({ patientID: patientId })
+            .sort({ createdAt: -1 });
+        res.json(notifications);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 //Update notification
 exports.updateNotification = async (req, res) => {
     try{

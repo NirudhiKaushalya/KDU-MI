@@ -78,53 +78,6 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.deletionRequestButton {
-  position: relative;
-  background: none;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: #fef3c7;
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  i {
-    font-size: 20px;
-    color: #f59e0b;
-    transition: color 0.3s ease;
-  }
-  
-  &:hover i {
-    color: #d97706;
-  }
-}
-
-.deletionRequestBadge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #dc2626;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 600;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
 .userProfile {
   display: flex;
   align-items: center;

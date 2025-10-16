@@ -27,7 +27,7 @@ const UserSidebar = ({
               <button
                 className={`${styles.menuButton} ${
                   activeSection === item.id ? styles.active : ''
-                }`}
+                } ${item.id === 'personal-info' ? styles.personalInfoHighlight : ''}`}
                 onClick={() => onSectionChange(item.id)}
               >
                 <span className={styles.menuIcon}>{item.icon}</span>

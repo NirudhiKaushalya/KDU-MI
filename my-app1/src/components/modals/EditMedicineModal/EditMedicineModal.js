@@ -81,6 +81,12 @@ const EditMedicineModal = ({ isOpen, onClose, medicine, onUpdateMedicine }) => {
     e.preventDefault();
     
     if (validateForm()) {
+      // Check if we have the necessary ID information
+      if (!medicine.id && !medicine._id) {
+        alert('Error: Medicine ID not found. Please refresh the page and try again.');
+        return;
+      }
+      
       // Determine stock level based on quantity and threshold
       let stockLevel = 'In Stock';
       if (formData.quantity === 0) {
@@ -91,13 +97,21 @@ const EditMedicineModal = ({ isOpen, onClose, medicine, onUpdateMedicine }) => {
 
       const updatedMedicine = {
         ...formData,
-        _id: medicine._id, // Preserve the database ID
+        _id: medicine._id, // Preserve the database ID (may be undefined for local medicines)
         id: medicine.id, // Preserve the frontend ID
         medicineName: formData.name, // Map name to medicineName for consistency
         quantity: parseInt(formData.quantity),
         lowStockThreshold: parseInt(formData.lowStockThreshold),
         stockLevel: stockLevel
       };
+
+      console.log('Submitting medicine update:', {
+        originalMedicine: medicine,
+        updatedMedicine: updatedMedicine,
+        has_id: !!medicine._id,
+        has_id_value: medicine._id,
+        id_value: medicine.id
+      });
 
       onUpdateMedicine(updatedMedicine);
       onClose();

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styles from './DeletionRequests.module.scss';
+import { useNotifications } from '../../../contexts/NotificationContext';
 
 const DeletionRequests = ({ userData, onPatientDeleted }) => {
+  const { addNotification } = useNotifications();
   const [deletionRequests, setDeletionRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,6 +39,16 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
       await fetchDeletionRequests();
       
       const actionText = response === 'approved' ? 'approved' : 'rejected';
+      
+      // Add notification for deletion request response
+      addNotification({
+        type: response === 'approved' ? 'success' : 'warning',
+        icon: response === 'approved' ? '✅' : '❌',
+        title: `Deletion Request ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
+        description: `Your medical record deletion request has been ${actionText}.`,
+        category: 'patient'
+      });
+      
       alert(`Deletion request ${actionText} successfully!`);
       
       // If approved, notify parent component that a patient was deleted

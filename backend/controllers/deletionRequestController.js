@@ -61,6 +61,17 @@ exports.createDeletionRequest = async (req, res) => {
       reason
     });
 
+    // Create notification for the patient about the deletion request
+    const Notification = require("../models/notification");
+    const notification = new Notification({
+      notificationID: Date.now(),
+      patientID: patientIndexNo,
+      message: `You have received a deletion request for your medical record. Please review and respond.`,
+      type: 'deletion_request_received',
+      category: 'patient'
+    });
+    await notification.save();
+
     res.status(201).json({
       message: "Deletion request sent successfully",
       request: deletionRequest
@@ -132,6 +143,28 @@ exports.respondToDeletionRequest = async (req, res) => {
         await Patient.findByIdAndDelete(patientRecord._id);
         console.log(`Patient record deleted for index: ${deletionRequest.patientIndexNo}`);
       }
+      
+      // Create notification for approved deletion request
+      const Notification = require("../models/notification");
+      const notification = new Notification({
+        notificationID: Date.now(),
+        patientID: deletionRequest.patientIndexNo,
+        message: `Patient deletion request approved - Index: ${deletionRequest.patientIndexNo}`,
+        type: 'deletion_request_approved',
+        category: 'patient'
+      });
+      await notification.save();
+    } else {
+      // Create notification for rejected deletion request
+      const Notification = require("../models/notification");
+      const notification = new Notification({
+        notificationID: Date.now(),
+        patientID: deletionRequest.patientIndexNo,
+        message: `Patient deletion request rejected - Index: ${deletionRequest.patientIndexNo}`,
+        type: 'deletion_request_rejected',
+        category: 'patient'
+      });
+      await notification.save();
     }
 
     res.status(200).json({

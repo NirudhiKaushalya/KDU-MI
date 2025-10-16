@@ -116,8 +116,8 @@ const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) =
                 <tr>
                   <th>Index No</th>
                   <th>Consulted Date</th>
+                  <th>Consulted Time</th>
                   <th>Condition</th>
-                  <th>Lab Reports</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -126,16 +126,8 @@ const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) =
                   <tr key={record.id} className={styles.tableRow}>
                     <td className={styles.recordNo}>#{record.recordNo}</td>
                     <td className={styles.date}>{record.date}</td>
+                    <td className={styles.time}>{record.consultedTime || 'N/A'}</td>
                     <td className={styles.condition}>{record.diagnosis}</td>
-                    <td className={styles.labReports}>
-                      {record.labReports && record.labReports.length > 0 ? (
-                        <span className={styles.labReportsIndicator}>
-                          📄 {record.labReports.length} file(s)
-                        </span>
-                      ) : (
-                        <span className={styles.noReports}>No reports</span>
-                      )}
-                    </td>
                     <td className={styles.actions}>
                       <button 
                         className={styles.viewButton}
