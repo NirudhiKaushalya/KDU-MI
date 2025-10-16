@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import PatientFilterModal from '../../modals/PatientFilterModal/PatientFilterModal';
 import EditPatientModal from '../../modals/EditPatientModal/EditPatientModal';
+import DeletionRequestModal from '../../modals/DeletionRequestModal/DeletionRequestModal';
 import styles from './PatientManagement.module.scss';
 
 const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, patients = [] }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeletionRequestModal, setShowDeletionRequestModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [appliedFilters, setAppliedFilters] = useState({
     condition: 'Any',
@@ -30,15 +32,26 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
   };
 
   const handleDelete = (patientId) => {
-    if (window.confirm('Are you sure you want to delete this patient record? This action cannot be undone.')) {
-      onDeletePatient(patientId);
-      alert('Patient record deleted successfully!');
+    const patient = patients.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatient(patient);
+      setShowDeletionRequestModal(true);
     }
   };
 
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setSelectedPatient(null);
+  };
+
+  const handleCloseDeletionRequestModal = () => {
+    setShowDeletionRequestModal(false);
+    setSelectedPatient(null);
+  };
+
+  const handleDeletionRequestSent = () => {
+    // Optionally refresh the patient list or show a success message
+    console.log('Deletion request sent successfully');
   };
 
   const handleUpdatePatient = (updatedPatient) => {
@@ -199,7 +212,7 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
                         <button 
                           className={`${styles.btnIcon} ${styles.btnDelete}`}
                           onClick={() => handleDelete(patient.id)}
-                          title="Delete Patient"
+                          title="Request Deletion"
                         >
                           <i className="fas fa-trash"></i>
                         </button>
@@ -235,6 +248,13 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
         patient={selectedPatient}
         onUpdatePatient={handleUpdatePatient}
         readOnly={true}
+      />
+
+      <DeletionRequestModal
+        isOpen={showDeletionRequestModal}
+        onClose={handleCloseDeletionRequestModal}
+        patient={selectedPatient}
+        onRequestSent={handleDeletionRequestSent}
       />
     </div>
   );

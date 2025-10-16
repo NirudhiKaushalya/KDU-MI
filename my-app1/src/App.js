@@ -11,6 +11,7 @@ import ForgotPassword from './components/auth/ForgotPassword/ForgotPassword';
 import Dashboard from './components/sections/Dashboard/Dashboard';
 import UserDashboard from './components/sections/UserDashboard/UserDashboard';
 import UserNotifications from './components/sections/UserNotifications/UserNotifications';
+import DeletionRequests from './components/sections/DeletionRequests/DeletionRequests';
 import PersonalInfo from './components/sections/PersonalInfo/PersonalInfo';
 import MedicalHistory from './components/sections/MedicalHistory/MedicalHistory';
 import PatientManagement from './components/sections/PatientManagement/PatientManagement';
@@ -39,6 +40,7 @@ const AppContent = () => {
   const [previousSection, setPreviousSection] = useState('dashboard');
   const [showAdmitPatientModal, setShowAdmitPatientModal] = useState(false);
   const [showAddMedicineModal, setShowAddMedicineModal] = useState(false);
+  const [deletionRequestCount, setDeletionRequestCount] = useState(0);
   
   // Patient data - starts with sample data for testing
   const [patients, setPatients] = useState([]);
@@ -72,6 +74,36 @@ const AppContent = () => {
 
     loadData();
   }, []);
+
+  // Fetch deletion request count for users
+  useEffect(() => {
+    const fetchDeletionRequestCount = async () => {
+      if (userType === 'user' && userData?.indexNo) {
+        try {
+          const response = await axios.get(`http://localhost:8000/api/deletionRequest/pending-count/${userData.indexNo}`);
+          setDeletionRequestCount(response.data.count);
+        } catch (error) {
+          console.error('Error fetching deletion request count:', error);
+          setDeletionRequestCount(0);
+        }
+      } else {
+        setDeletionRequestCount(0);
+      }
+    };
+
+    fetchDeletionRequestCount();
+  }, [userType, userData?.indexNo]);
+
+  // Function to refresh patient data when a deletion request is approved
+  const handlePatientDeleted = async () => {
+    try {
+      const patientsResponse = await axios.get('http://localhost:8000/api/patient/');
+      setPatients(patientsResponse.data);
+      console.log('Patient data refreshed after deletion:', patientsResponse.data);
+    } catch (error) {
+      console.error('Error refreshing patient data:', error);
+    }
+  };
 
   // Clear any existing dummy notifications on app start
   useEffect(() => {
@@ -721,7 +753,9 @@ const AppContent = () => {
                 userName={userName}
                 userData={userData}
                 notificationCount={getNewNotificationsCount()}
+                deletionRequestCount={deletionRequestCount}
                 onNavigateToNotifications={() => handleSectionChange('notifications')}
+                onNavigateToDeletionRequests={() => handleSectionChange('deletion-requests')}
                 onNavigateToProfile={() => handleSectionChange('personal-info')}
                 onLogout={handleLogout}
               />
@@ -729,6 +763,7 @@ const AppContent = () => {
               <div className="section active">
                 {activeSection === 'dashboard' && <UserDashboard userName={userName} />}
                 {activeSection === 'notifications' && <UserNotifications />}
+                {activeSection === 'deletion-requests' && <DeletionRequests userData={userData} onPatientDeleted={handlePatientDeleted} />}
                 {activeSection === 'personal-info' && <PersonalInfo userName={userName} userData={userData} onUpdateUserData={handleUpdateUserData} />}
                 {activeSection === 'medical-history' && <MedicalHistory userName={userName} patients={patients} userData={userData} />}
               </div>

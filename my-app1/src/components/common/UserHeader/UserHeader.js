@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './UserHeader.module.scss';
 
-const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0, onNavigateToNotifications, onNavigateToProfile, onLogout }) => {
+const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0, deletionRequestCount = 0, onNavigateToNotifications, onNavigateToDeletionRequests, onNavigateToProfile, onLogout }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -49,6 +49,17 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
             <i className="fas fa-bell"></i>
             {notificationCount > 0 && (
               <span className={styles.notificationBadge}>{notificationCount}</span>
+            )}
+          </button>
+          
+          <button 
+            className={styles.deletionRequestButton}
+            onClick={onNavigateToDeletionRequests}
+            title="View deletion requests"
+          >
+            <i className="fas fa-exclamation-triangle"></i>
+            {deletionRequestCount > 0 && (
+              <span className={styles.deletionRequestBadge}>{deletionRequestCount}</span>
             )}
           </button>
           

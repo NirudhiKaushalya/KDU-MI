@@ -3,6 +3,7 @@ const express = require("express");//hadle server and APIs paths
 const mongoose = require("mongoose");//connect MD manage to schemas and models
 const cors = require("cors");//allow APIs to access different frontend
 const adminRoutes = require("./routes/adminRoutes");
+const deletionRequestRoutes = require("./routes/deletionRequestRoutes");
 const medicalRecordRoutes = require("./routes/medicalRecordRoutes");
 const medicineRoutes =require("./routes/medicineRoutes");
 const notificationRoutes =require("./routes/notificationRoutes");
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(express.json());//accept json request
 
 app.use("/api/admin", adminRoutes);//define endpoint
+app.use("/api/deletionRequest", deletionRequestRoutes);
 app.use("/api/medicalRecord", medicalRecordRoutes);
 app.use("/api/medicines", medicineRoutes);
 app.use("/api/notification", notificationRoutes);
