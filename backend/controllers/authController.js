@@ -176,6 +176,35 @@ exports.getUserByEmail = async (req, res) => {
   }
 };
 
+exports.getUserByIndexNo = async (req, res) => {
+  try {
+    const { indexNo } = req.params;
+    const user = await User.findOne({ indexNo });
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      userName: user.userName,
+      indexNo: user.indexNo,
+      gender: user.gender,
+      dob: user.dob,
+      email: user.email,
+      contactNo: user.contactNo,
+      role: user.role,
+      department: user.department,
+      intake: user.intake,
+      additionalNotes: user.additionalNotes,
+      photoPreview: user.photoPreview,
+      photoData: user.photoData
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;

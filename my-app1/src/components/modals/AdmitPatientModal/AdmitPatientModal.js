@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import styles from './AdmitPatientModal.module.scss';
 
 const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) => {
@@ -14,6 +15,7 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
   });
 
   const [medicineSearch, setMedicineSearch] = useState('');
+  const [userValidation, setUserValidation] = useState({ status: null, message: '' });
 
   const medicalConditions = [
     'Select a condition',
@@ -42,6 +44,29 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
       ...prev,
       [field]: value
     }));
+
+    // Validate user when index number is entered
+    if (field === 'indexNo' && value.trim()) {
+      validateUser(value.trim());
+    } else if (field === 'indexNo' && !value.trim()) {
+      setUserValidation({ status: null, message: '' });
+    }
+  };
+
+  const validateUser = async (indexNo) => {
+    try {
+      setUserValidation({ status: 'validating', message: 'Validating user...' });
+      const response = await axios.get(`http://localhost:8000/api/user/getByIndexNo/${indexNo}`);
+      setUserValidation({ 
+        status: 'valid', 
+        message: `✓ User found: ${response.data.userName}` 
+      });
+    } catch (error) {
+      setUserValidation({ 
+        status: 'invalid', 
+        message: '✗ User not registered in the system' 
+      });
+    }
   };
 
   const handleMedicineQuantityChange = (index, quantity) => {
@@ -109,6 +134,18 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
       alert('Please fill in all required fields (Index No, Consulted Date, and Medical Condition)');
       return;
     }
+
+    // Check if user validation is invalid
+    if (userValidation.status === 'invalid') {
+      alert('Cannot proceed: User is not registered in the system. Please register the user first.');
+      return;
+    }
+
+    // Check if user validation is still in progress
+    if (userValidation.status === 'validating') {
+      alert('Please wait for user validation to complete.');
+      return;
+    }
     
     if (onAdmitPatient) {
       console.log('Admitting patient with formData:', formData);
@@ -128,6 +165,9 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
       additionalNotes: ''
     });
     
+    // Reset validation state
+    setUserValidation({ status: null, message: '' });
+    
     // Clear file input
     const fileInput = document.getElementById('labReports');
     if (fileInput) {
@@ -141,6 +181,24 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
   const filteredMedicines = availableMedicines.filter(medicine =>
     medicine.toLowerCase().includes(medicineSearch.toLowerCase())
   );
+
+  // Reset form and validation when modal is closed
+  React.useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        indexNo: '',
+        consultedDate: '',
+        medicalCondition: '',
+        reasonForConsultation: '',
+        consultedTime: '',
+        labReports: null,
+        prescribedMedicines: [],
+        additionalNotes: ''
+      });
+      setUserValidation({ status: null, message: '' });
+      setMedicineSearch('');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -166,7 +224,13 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
                   value={formData.indexNo}
                   onChange={(e) => handleInputChange('indexNo', e.target.value)}
                   placeholder="Enter index number"
+                  className={userValidation.status === 'invalid' ? styles.errorInput : ''}
                 />
+                {userValidation.message && (
+                  <div className={`${styles.validationMessage} ${styles[userValidation.status]}`}>
+                    {userValidation.message}
+                  </div>
+                )}
               </div>
 
               <div className={styles.formGroup}>

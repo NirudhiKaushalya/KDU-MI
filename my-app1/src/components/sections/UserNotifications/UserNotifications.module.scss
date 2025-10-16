@@ -22,16 +22,17 @@
 .notificationsContent {
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  height: calc(100vh - 200px);
+  gap: 20px;
+  height: calc(100vh - 180px);
 }
 
 .notificationSection {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
   flex: 1;
   min-height: 0;
+  max-height: 500px;
 }
 
 .sectionTitle {
@@ -47,10 +48,11 @@
 .notificationList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  max-height: 450px;
 }
 
 .notificationCard {
@@ -64,6 +66,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  min-height: 100px;
 
   &:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -75,6 +78,7 @@
   display: flex;
   align-items: flex-start;
   gap: 15px;
+  padding-top: 8px;
 }
 
 .notificationIcon {
@@ -136,6 +140,7 @@
   
   .cardContent {
     gap: 12px;
+    padding-top: 6px;
   }
   
   .notificationIcon {
@@ -162,11 +167,13 @@
   }
   
   .notificationsContent {
-    gap: 20px;
+    gap: 15px;
+    height: calc(100vh - 160px);
   }
   
   .notificationSection {
-    gap: 12px;
+    gap: 10px;
+    max-height: 450px;
   }
   
   .sectionTitle {
@@ -174,15 +181,18 @@
   }
   
   .notificationList {
-    gap: 10px;
+    gap: 8px;
+    max-height: 380px;
   }
   
   .notificationCard {
-    padding: 12px;
+    padding: 16px;
+    min-height: 90px;
   }
   
   .cardContent {
-    gap: 10px;
+    gap: 12px;
+    padding-top: 6px;
   }
   
   .notificationIcon {
@@ -211,7 +221,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
 }
 
 .markReadButton {

@@ -365,6 +365,17 @@ const AppContent = () => {
 
   const handleAddPatient = async (patientData) => {
     try {
+      // First, validate if the user with the provided index number is registered
+      try {
+        const userResponse = await axios.get(`http://localhost:8000/api/user/getByIndexNo/${patientData.indexNo}`);
+        console.log('User validation successful:', userResponse.data);
+      } catch (userError) {
+        // If user is not found, show error message and return
+        console.log('User validation failed:', userError.response?.data);
+        alert(`Error: User with index number "${patientData.indexNo}" is not registered in the system. Please ensure the user is registered before admitting.`);
+        return;
+      }
+
       // Validate and deduct prescribed medicine quantities from stock
       const prescribedMedicines = patientData.prescribedMedicines || [];
       
