@@ -730,7 +730,7 @@ const AppContent = () => {
                 {activeSection === 'dashboard' && <UserDashboard userName={userName} />}
                 {activeSection === 'notifications' && <UserNotifications />}
                 {activeSection === 'personal-info' && <PersonalInfo userName={userName} userData={userData} onUpdateUserData={handleUpdateUserData} />}
-                {activeSection === 'medical-history' && <MedicalHistory userName={userName} patients={patients} />}
+                {activeSection === 'medical-history' && <MedicalHistory userName={userName} patients={patients} userData={userData} />}
               </div>
             </div>
             
