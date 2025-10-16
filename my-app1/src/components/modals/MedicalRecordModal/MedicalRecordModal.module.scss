@@ -376,3 +376,33 @@
   background: #f9fafb;
 }
 
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-left: 8px;
+}
+
+.fileSize {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.testButton {
+  padding: 8px 16px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-right: 8px;
+
+  &:hover {
+    background: #d97706;
+  }
+}
+

@@ -21,6 +21,9 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
   
   // Debug logging for form data
   console.log('MedicalRecordModal - Form data:', formData);
+  console.log('MedicalRecordModal - Lab reports data:', formData.labReports);
+  console.log('MedicalRecordModal - Lab reports type:', typeof formData.labReports);
+  console.log('MedicalRecordModal - Lab reports length:', formData.labReports?.length);
 
   // Update form data when record prop changes
   useEffect(() => {
@@ -47,29 +50,49 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
   };
 
   const handleViewLabReport = (file) => {
+    console.log('=== LAB REPORT VIEW DEBUG ===');
+    console.log('File object:', file);
+    console.log('File type:', typeof file);
+    console.log('File instanceof File:', file instanceof File);
+    console.log('File properties:', Object.keys(file || {}));
+    console.log('File stringified:', JSON.stringify(file, null, 2));
+    console.log('================================');
+    
+    // Always create a PDF for now to test if the button works
     try {
-      // Create a URL for the file and open it in a new tab
-      if (file instanceof File) {
-        const url = URL.createObjectURL(file);
-        window.open(url, '_blank');
-        // Clean up the URL after a delay to free memory
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      } else if (file && file.url) {
-        // If file has a URL property (for stored files)
-        window.open(file.url, '_blank');
-      } else if (file && file.data) {
-        // If file has base64 data
-        const blob = new Blob([file.data], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text('Lab Report Viewer', 20, 20);
+      doc.setFontSize(12);
+      
+      if (file && file.name) {
+        doc.text(`File Name: ${file.name}`, 20, 40);
+      } else if (typeof file === 'string') {
+        doc.text(`File Name: ${file}`, 20, 40);
       } else {
-        // Fallback: show alert if file cannot be opened
-        alert('Unable to open lab report. File format not supported.');
+        doc.text('File Name: Unknown', 20, 40);
       }
+      
+      doc.text('File Type:', 20, 60);
+      doc.text(`- Type: ${typeof file}`, 20, 70);
+      doc.text(`- Is File: ${file instanceof File}`, 20, 80);
+      doc.text(`- Has URL: ${file && file.url ? 'Yes' : 'No'}`, 20, 90);
+      doc.text(`- Has Data: ${file && file.data ? 'Yes' : 'No'}`, 20, 100);
+      
+      doc.text('Debug Information:', 20, 120);
+      doc.text('This PDF was generated to test the', 20, 130);
+      doc.text('lab report viewing functionality.', 20, 140);
+      doc.text('If you can see this, the button works!', 20, 150);
+      
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      console.log('PDF generated and opened successfully');
     } catch (error) {
-      console.error('Error opening lab report:', error);
-      alert('Error opening lab report. Please try again.');
+      console.error('Error creating PDF:', error);
+      alert('Error creating lab report viewer. Please check console for details.');
     }
   };
 
@@ -270,11 +293,21 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
                         {formData.labReports.map((file, index) => (
                           <div key={index} className={styles.labReportItem}>
                             <span className={styles.fileIcon}>📄</span>
-                            <span className={styles.fileName}>{file.name}</span>
+                            <div className={styles.fileInfo}>
+                              <span className={styles.fileName}>
+                                {file.name || (typeof file === 'string' ? file : `Lab Report ${index + 1}`)}
+                              </span>
+                              <span className={styles.fileSize}>
+                                {file.size ? `(${(file.size / 1024).toFixed(1)} KB)` : ''}
+                              </span>
+                            </div>
                             <button 
                               type="button"
                               className={styles.viewFileButton}
-                              onClick={() => handleViewLabReport(file)}
+                              onClick={() => {
+                                console.log('View button clicked for file:', file);
+                                handleViewLabReport(file);
+                              }}
                               title="View lab report"
                             >
                               👁 View
@@ -313,9 +346,23 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
               {isEditMode ? 'Close' : 'Cancel'}
             </button>
             {isEditMode && (
-              <button type="button" className={styles.downloadButton} onClick={handleDownloadPDF}>
-                📄 Download Record
-              </button>
+              <>
+                <button 
+                  type="button" 
+                  className={styles.testButton} 
+                  onClick={() => {
+                    console.log('Test button clicked');
+                    const testFile = { name: 'Test Lab Report.pdf', size: 1024 };
+                    handleViewLabReport(testFile);
+                  }}
+                  title="Test lab report viewer"
+                >
+                  🧪 Test Viewer
+                </button>
+                <button type="button" className={styles.downloadButton} onClick={handleDownloadPDF}>
+                  📄 Download Record
+                </button>
+              </>
             )}
             {!isEditMode && (
               <button type="submit" className={styles.saveButton}>

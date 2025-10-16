@@ -32,7 +32,7 @@ exports.registerUser = async (req, res) => {
       department,
       additionalNotes: additionalNotes || '',
       photoPreview: photoPreview || null,
-      photoData: photoFile ? {
+      photoData: photoFile && photoPreview ? {
         name: photoFile.name,
         size: photoFile.size,
         type: photoFile.type,

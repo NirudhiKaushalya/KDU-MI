@@ -14,16 +14,16 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     additionalNotes: { type: String, default: '' }, // Added for frontend compatibility
     photoData: {
-      name: String,
-      size: Number,
-      type: String,
-      data: String // Base64 encoded photo data
+      name: { type: String },
+      size: { type: Number },
+      type: { type: String },
+      data: { type: String } // Base64 encoded photo data
     },
     photoPreview: { type: String }, // Added for frontend photo preview
     pdfFile: {
-      name: String,
-      size: Number,
-      type: String
+      name: { type: String },
+      size: { type: Number },
+      type: { type: String }
     }
   },
   { timestamps: true }
