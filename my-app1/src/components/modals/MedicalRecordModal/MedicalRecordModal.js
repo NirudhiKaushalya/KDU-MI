@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import styles from './MedicalRecordModal.module.scss';
 import jsPDF from 'jspdf';
 
 const MedicalRecordModal = ({ record, onClose, onSave }) => {
   const { addNotification } = useNotifications();
+  
+  // Debug logging
+  console.log('MedicalRecordModal - Received record:', record);
+  
   const [formData, setFormData] = useState({
     indexNo: record?.indexNo || '',
     consultedDate: record?.consultedDate || '',
@@ -14,6 +18,24 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     consultedTime: record?.consultedTime || '',
     labReports: record?.labReports || null
   });
+  
+  // Debug logging for form data
+  console.log('MedicalRecordModal - Form data:', formData);
+
+  // Update form data when record prop changes
+  useEffect(() => {
+    if (record) {
+      setFormData({
+        indexNo: record.indexNo || '',
+        consultedDate: record.consultedDate || '',
+        medicalCondition: record.medicalCondition || '',
+        additionalNotes: record.additionalNotes || '',
+        reasonForConsultation: record.reasonForConsultation || '',
+        consultedTime: record.consultedTime || '',
+        labReports: record.labReports || null
+      });
+    }
+  }, [record]);
 
   const isEditMode = !!record;
 

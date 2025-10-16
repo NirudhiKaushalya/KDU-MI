@@ -6,6 +6,31 @@ const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) =
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showModal, setShowModal] = useState(false);
   
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+    
+    // Try to parse and format the date
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+  
   // Get current user's index number for filtering
   const currentUserIndexNo = userData?.indexNo;
   
@@ -27,21 +52,34 @@ const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) =
   console.log('MedicalHistory - Filtered user patients:', userPatients);
   
   // Convert filtered patients to medical records format
-  const medicalRecords = userPatients.map((patient, index) => ({
-    id: patient.id,
-    recordNo: patient.indexNo,
-    date: patient.admittedDate || patient.consultedDate || '',
-    consultedTime: patient.admittedTime || patient.consultedTime || '',
-    diagnosis: patient.medicalCondition || patient.condition || '',
-    role: 'Doctor',
-    patientName: `${patient.firstName} ${patient.lastName}`,
-    labReports: patient.labReports || null,
-    prescribedMedicines: patient.prescribedMedicines || [],
-    additionalNotes: patient.additionalNotes || '',
-    reasonForConsultation: patient.reason || patient.reasonForConsultation || ''
-  }));
+  const medicalRecords = userPatients.map((patient, index) => {
+    console.log('MedicalHistory - Processing patient:', patient);
+    
+    const rawDate = patient.admittedDate || patient.consultedDate || '';
+    const formattedDate = formatDateForInput(rawDate);
+    
+    return {
+      id: patient.id,
+      recordNo: patient.indexNo,
+      indexNo: patient.indexNo, // For the modal
+      date: rawDate, // Keep original for display
+      consultedDate: formattedDate, // Formatted for the modal input
+      consultedTime: patient.admittedTime || patient.consultedTime || '',
+      diagnosis: patient.medicalCondition || patient.condition || '',
+      medicalCondition: patient.medicalCondition || patient.condition || '', // For the modal
+      role: 'Doctor',
+      patientName: patient.name || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+      labReports: patient.labReports || null,
+      prescribedMedicines: patient.prescribedMedicines || [],
+      additionalNotes: patient.additionalNotes || '',
+      reasonForConsultation: patient.reason || patient.reasonForConsultation || ''
+    };
+  });
+  
+  console.log('MedicalHistory - Final medical records:', medicalRecords);
 
   const handleRecordClick = (record) => {
+    console.log('MedicalHistory - Record clicked:', record);
     setSelectedRecord(record);
     setShowModal(true);
   };
