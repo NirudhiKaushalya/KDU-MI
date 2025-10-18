@@ -8,7 +8,6 @@ const UserSidebar = ({
 }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
     { id: 'deletion-requests', label: 'Deletion Requests', icon: '⚠️' },
     { id: 'medical-history', label: 'Medical History', icon: '📋' },
     { id: 'personal-info', label: 'Personal Info', icon: '👤' }

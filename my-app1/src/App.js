@@ -200,12 +200,49 @@ const AppContent = () => {
 
   // Check for stock alerts whenever medicines change (only for admin users)
   useEffect(() => {
-    console.log('Medicines changed, checking alerts. Medicines count:', medicines.length, 'User type:', userType);
     if (medicines.length > 0 && userType === 'admin') {
-      console.log('Triggering checkStockAlerts for admin user');
       checkStockAlerts(medicines);
     }
   }, [medicines, checkStockAlerts, userType]);
+
+  // Additional trigger: Check stock alerts when user logs in as admin (if medicines are already loaded)
+  useEffect(() => {
+    if (userType === 'admin' && medicines.length > 0) {
+      // Add a small delay to ensure everything is properly initialized
+      setTimeout(() => {
+        checkStockAlerts(medicines);
+      }, 1000);
+    }
+  }, [userType, medicines, checkStockAlerts]);
+
+  // Force stock alerts on page load for admin users
+  useEffect(() => {
+    const forceStockAlerts = () => {
+      if (userType === 'admin' && medicines.length > 0) {
+        // Check each medicine manually and add alerts
+        medicines.forEach(medicine => {
+          const currentStock = parseInt(medicine.quantity) || 0;
+          const lowStockThreshold = parseInt(medicine.lowStockThreshold) || 10;
+          
+          if (currentStock <= lowStockThreshold && lowStockThreshold > 0) {
+            addNotification({
+              type: 'warning',
+              icon: '⚠️',
+              title: `Low Stock Alert: ${medicine.medicineName}`,
+              description: `Stock for ${medicine.medicineName} is running low. Current quantity: ${currentStock} units (Threshold: ${lowStockThreshold}).`,
+              category: 'stock',
+              medicineId: medicine._id || medicine.id,
+              medicineName: medicine.medicineName
+            });
+          }
+        });
+      }
+    };
+
+    // Run after 2 seconds to ensure everything is loaded
+    const timer = setTimeout(forceStockAlerts, 2000);
+    return () => clearTimeout(timer);
+  }, [userType, medicines, addNotification]);
 
 
   const handleLogin = (success, type = null, name = '', loginUserData = null) => {
@@ -768,6 +805,14 @@ const AppContent = () => {
 
   const handleAddReport = (report) => {
     setRecentReports(prev => [report, ...prev.slice(0, 9)]); // Keep only last 10 reports
+    
+    // Add report generation activity to recent activities
+    addActivity({
+      title: 'Report Generated',
+      description: `${report.title} has been generated successfully`,
+      type: 'report',
+      icon: '📊'
+    });
   };
 
   const handleDeleteReport = (reportId) => {
@@ -795,6 +840,7 @@ const AppContent = () => {
     setPreviousSection('dashboard');
     setActiveSection('dashboard');
   };
+
 
   const renderSection = () => {
     const sectionProps = {
@@ -861,9 +907,9 @@ const AppContent = () => {
                 medicines={medicines}
                 onSearch={(searchResult) => {
                   // Handle search result selection if needed
-                  console.log('Search result selected:', searchResult);
                 }}
               />
+              
               
               <div className="section active">
                 {renderSection()}

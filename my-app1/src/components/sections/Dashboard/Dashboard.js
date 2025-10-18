@@ -65,6 +65,7 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
     if (activityFilter === 'medicine') return activity.type === 'medicine';
     if (activityFilter === 'patient') return activity.type === 'patient';
     if (activityFilter === 'settings') return activity.type === 'settings';
+    if (activityFilter === 'report') return activity.type === 'report';
     return true;
   });
 
@@ -156,6 +157,12 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
                 onClick={() => setActivityFilter('settings')}
               >
                 Settings
+              </button>
+              <button
+                className={`${styles.filterBtn} ${activityFilter === 'report' ? styles.filterBtnActive : ''}`}
+                onClick={() => setActivityFilter('report')}
+              >
+                Reports
               </button>
               {activities.length > 0 && (
                 <button

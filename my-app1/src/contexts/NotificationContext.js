@@ -111,7 +111,7 @@ export const NotificationProvider = ({ children }) => {
       
       return [newNotification, ...prev];
     });
-  }, []);
+  }, [shouldShowNotification]);
 
   const dismissNotification = useCallback((id) => {
     setNotifications(prev => 
@@ -161,22 +161,16 @@ export const NotificationProvider = ({ children }) => {
     const expiryEnabled = settings?.expiryAlertEnabled !== false; // Default to true if not set
     const expiryDays = settings?.expiryAlertDays || 7; // Default to 7 days
 
-    console.log('Alert settings - Low stock enabled:', lowStockEnabled, 'Expiry enabled:', expiryEnabled, 'Expiry days:', expiryDays);
 
     medicines.forEach(medicine => {
-      console.log('Checking medicine:', medicine.medicineName, 'quantity:', medicine.quantity, 'threshold:', medicine.lowStockThreshold, 'expiry:', medicine.expiryDate);
-      
       const currentStock = parseInt(medicine.quantity) || 0;
       const lowStockThreshold = parseInt(medicine.lowStockThreshold) || 10; // Default threshold
       const expiryDate = new Date(medicine.expiryDate);
       const today = new Date();
       const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
 
-      console.log('Medicine analysis - Current stock:', currentStock, 'Threshold:', lowStockThreshold, 'Days until expiry:', daysUntilExpiry);
-
       // Check for low stock (only if enabled in settings and stock is below threshold)
       if (lowStockEnabled && currentStock <= lowStockThreshold && lowStockThreshold > 0) {
-        console.log('Adding low stock alert for:', medicine.medicineName);
         addNotification({
           type: 'warning',
           icon: '⚠️',
@@ -190,7 +184,6 @@ export const NotificationProvider = ({ children }) => {
 
       // Check for expiry (using settings for alert days, only if enabled)
       if (expiryEnabled && daysUntilExpiry <= expiryDays && daysUntilExpiry > 0) {
-        console.log('Adding expiry alert for:', medicine.medicineName, 'expiring in', daysUntilExpiry, 'days');
         addNotification({
           type: 'expiry',
           icon: '📅',
@@ -204,7 +197,6 @@ export const NotificationProvider = ({ children }) => {
 
       // Check for expired medicines (always show regardless of settings)
       if (daysUntilExpiry < 0) {
-        console.log('Adding expired medicine alert for:', medicine.medicineName);
         addNotification({
           type: 'danger',
           icon: '❌',
