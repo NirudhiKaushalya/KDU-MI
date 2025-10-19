@@ -51,6 +51,20 @@ const Registration = ({ onBackToLogin, onRegister }) => {
         intake: ''
       }));
     }
+
+    // Validate DOB to prevent future dates
+    if (name === 'dob' && value) {
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Set to end of today
+      
+      if (selectedDate > today) {
+        setErrors(prev => ({
+          ...prev,
+          dob: 'Date of birth cannot be in the future'
+        }));
+      }
+    }
   };
 
   const handlePhotoUpload = (e) => {
@@ -102,6 +116,15 @@ const Registration = ({ onBackToLogin, onRegister }) => {
 
     if (!formData.dob) {
       newErrors.dob = 'Date of birth is required';
+    } else {
+      // Check if DOB is in the future
+      const selectedDate = new Date(formData.dob);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Set to end of today
+      
+      if (selectedDate > today) {
+        newErrors.dob = 'Date of birth cannot be in the future';
+      }
     }
 
     if (!formData.email.trim()) {
@@ -297,6 +320,7 @@ const Registration = ({ onBackToLogin, onRegister }) => {
                   name="dob"
                   value={formData.dob}
                   onChange={handleInputChange}
+                  max={new Date().toISOString().split('T')[0]}
                   className={`${styles.inputField} ${errors.dob ? styles.errorField : ''}`}
                 />
                 {errors.dob && <span className={styles.errorText}>{errors.dob}</span>}
