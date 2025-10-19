@@ -63,14 +63,24 @@ exports.createDeletionRequest = async (req, res) => {
 
     // Create notification for the patient about the deletion request
     const Notification = require("../models/notification");
-    const notification = new Notification({
+    const patientNotification = new Notification({
       notificationID: Date.now(),
       patientID: patientIndexNo,
       message: `You have received a deletion request for your medical record. Please review and respond.`,
       type: 'deletion_request_received',
       category: 'patient'
     });
-    await notification.save();
+    await patientNotification.save();
+
+    // Create notification for admin/system about the deletion request
+    const adminNotification = new Notification({
+      notificationID: Date.now() + 1, // Ensure unique ID
+      patientID: 'admin', // Mark as admin notification
+      message: `You have received a medical record deletion request for patient ${patientIndexNo}. Reason: ${reason}`,
+      type: 'deletion_request_admin',
+      category: 'admin'
+    });
+    await adminNotification.save();
 
     res.status(201).json({
       message: "Deletion request sent successfully",
@@ -86,7 +96,10 @@ exports.getDeletionRequestsByPatient = async (req, res) => {
   try {
     const { indexNo } = req.params;
 
-    const requests = await DeletionRequest.find({ patientIndexNo: indexNo })
+    const requests = await DeletionRequest.find({ 
+      patientIndexNo: indexNo,
+      dismissedByPatient: false // Only return non-dismissed requests
+    })
       .populate('medicalRecordId')
       .sort({ requestedAt: -1 });
 
@@ -96,7 +109,7 @@ exports.getDeletionRequestsByPatient = async (req, res) => {
   }
 };
 
-// Get all deletion requests (admin view)
+// Get all deletion requests (admin view) - includes dismissed requests
 exports.getAllDeletionRequests = async (req, res) => {
   try {
     const requests = await DeletionRequest.find()
@@ -177,6 +190,57 @@ exports.respondToDeletionRequest = async (req, res) => {
   }
 };
 
+// Dismiss a deletion request (hide from patient view)
+exports.dismissDeletionRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { patientIndexNo } = req.body; // Get patient index from request body
+
+    console.log(`Dismiss request - RequestId: ${requestId}, PatientIndexNo: ${patientIndexNo}`);
+
+    // Find the specific deletion request
+    const deletionRequest = await DeletionRequest.findById(requestId);
+    if (!deletionRequest) {
+      console.log(`Deletion request not found: ${requestId}`);
+      return res.status(404).json({ message: "Deletion request not found" });
+    }
+
+    console.log(`Found deletion request - PatientIndexNo: ${deletionRequest.patientIndexNo}, Status: ${deletionRequest.status}, Dismissed: ${deletionRequest.dismissedByPatient}`);
+
+    // Verify that the request belongs to the patient making the dismiss request
+    if (deletionRequest.patientIndexNo !== patientIndexNo) {
+      console.log(`Permission denied - Request belongs to ${deletionRequest.patientIndexNo}, but user is ${patientIndexNo}`);
+      return res.status(403).json({ 
+        message: "You can only dismiss your own deletion requests" 
+      });
+    }
+
+    // Check if already dismissed
+    if (deletionRequest.dismissedByPatient) {
+      console.log(`Request already dismissed: ${requestId}`);
+      return res.status(400).json({ 
+        message: "This deletion request has already been dismissed" 
+      });
+    }
+
+    // Mark as dismissed by patient
+    deletionRequest.dismissedByPatient = true;
+    deletionRequest.dismissedAt = new Date();
+
+    await deletionRequest.save();
+
+    console.log(`Successfully dismissed request: ${requestId} for patient: ${patientIndexNo}`);
+
+    res.status(200).json({
+      message: "Deletion request dismissed successfully",
+      request: deletionRequest
+    });
+  } catch (error) {
+    console.error('Error dismissing deletion request:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Get pending deletion requests count for notifications
 exports.getPendingRequestsCount = async (req, res) => {
   try {
@@ -184,7 +248,8 @@ exports.getPendingRequestsCount = async (req, res) => {
 
     const count = await DeletionRequest.countDocuments({
       patientIndexNo: indexNo,
-      status: 'pending'
+      status: 'pending',
+      dismissedByPatient: false // Only count non-dismissed requests
     });
 
     res.status(200).json({ count });

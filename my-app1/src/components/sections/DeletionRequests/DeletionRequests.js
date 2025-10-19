@@ -61,6 +61,45 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
     }
   };
 
+  const handleDismissRequest = async (requestId) => {
+    try {
+      // Call the backend API to dismiss the request with patient validation
+      await axios.put(`http://localhost:8000/api/deletionRequest/dismiss/${requestId}`, {
+        patientIndexNo: userData?.indexNo
+      });
+
+      // Remove the request from local state
+      setDeletionRequests(prev => 
+        prev.filter(req => req._id !== requestId)
+      );
+
+      addNotification({
+        type: 'success',
+        icon: '✅',
+        title: 'Request Dismissed',
+        description: 'Deletion request has been dismissed and will not appear again.',
+        category: 'patient'
+      });
+    } catch (error) {
+      console.error('Error dismissing deletion request:', error);
+      
+      let errorMessage = 'Failed to dismiss deletion request. Please try again.';
+      if (error.response?.status === 403) {
+        errorMessage = 'You can only dismiss your own deletion requests.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'This request has already been dismissed.';
+      }
+
+      addNotification({
+        type: 'error',
+        icon: '❌',
+        title: 'Dismiss Failed',
+        description: errorMessage,
+        category: 'patient'
+      });
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString();
@@ -140,6 +179,13 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
                 </div>
                 <div className={styles.statusSection}>
                   {getStatusBadge(request.status)}
+                  <button 
+                    className={styles.dismissButton}
+                    onClick={() => handleDismissRequest(request._id)}
+                    title="Dismiss this request"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
                 </div>
               </div>
 

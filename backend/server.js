@@ -12,9 +12,33 @@ const reportRoutes = require("./routes/reportRoutes");
 const userRoutes = require("./routes/userRoutes");
 
 
+const multer = require("multer");
+const path = require("path");
+
 const app = express();
 app.use(cors());
 app.use(express.json());//accept json request
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Test endpoint to verify file serving
+app.get('/test-uploads', (req, res) => {
+  const fs = require('fs');
+  const uploadsDir = path.join(__dirname, 'uploads');
+  
+  fs.readdir(uploadsDir, (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Could not read uploads directory', details: err.message });
+    }
+    
+    res.json({ 
+      message: 'Uploads directory accessible',
+      files: files,
+      uploadsPath: uploadsDir
+    });
+  });
+});
 
 app.use("/api/admin", adminRoutes);//define endpoint
 app.use("/api/deletionRequest", deletionRequestRoutes);

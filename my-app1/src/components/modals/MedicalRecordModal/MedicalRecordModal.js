@@ -58,11 +58,81 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     console.log('File stringified:', JSON.stringify(file, null, 2));
     console.log('================================');
     
-    // Always create a PDF for now to test if the button works
     try {
+      // Handle different types of file data
+      if (file instanceof File) {
+        // If it's a File object, create object URL and open it
+        const url = URL.createObjectURL(file);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        console.log('Opened file using object URL');
+        return;
+      }
+      
+      if (file && typeof file === 'object') {
+        // If it has a URL property, open it directly
+        if (file.url) {
+          window.open(file.url, '_blank');
+          console.log('Opened file using URL property');
+          return;
+        }
+        
+        // If it has data property (base64), create blob and open
+        if (file.data) {
+          const byteCharacters = atob(file.data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          console.log('Opened file using base64 data');
+          return;
+        }
+        
+        // If it has a path or filename, try to construct URL
+        if (file.path || file.filename || file.name) {
+          const fileName = file.path || file.filename || file.name;
+          // Try to open as a full backend URL
+          const url = `http://localhost:8000/uploads/${fileName}`;
+          window.open(url, '_blank');
+          console.log('Opened file using constructed URL:', url);
+          return;
+        }
+      }
+      
+      // If it's a string, treat it as a filename or URL
+      if (typeof file === 'string') {
+        if (file.startsWith('http') || file.startsWith('/')) {
+          window.open(file, '_blank');
+          console.log('Opened file using string URL:', file);
+          return;
+        } else {
+          // Treat as filename - construct full backend URL
+          const url = `http://localhost:8000/uploads/${file}`;
+          window.open(url, '_blank');
+          console.log('Opened file using filename:', file);
+          return;
+        }
+      }
+      
+      // Special case: If file is an array (multiple files), handle the first one
+      if (Array.isArray(file) && file.length > 0) {
+        console.log('File is an array, handling first file:', file[0]);
+        handleViewLabReport(file[0]);
+        return;
+      }
+      
+      // Fallback: Show detailed error information
+      console.error('Unable to open lab report - unsupported format:', file);
+      
+      // Create a helpful PDF with instructions
       const doc = new jsPDF();
       doc.setFontSize(16);
-      doc.text('Lab Report Viewer', 20, 20);
+      doc.text('Lab Report Information', 20, 20);
       doc.setFontSize(12);
       
       if (file && file.name) {
@@ -73,26 +143,30 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
         doc.text('File Name: Unknown', 20, 40);
       }
       
-      doc.text('File Type:', 20, 60);
+      doc.text('File Information:', 20, 60);
       doc.text(`- Type: ${typeof file}`, 20, 70);
       doc.text(`- Is File: ${file instanceof File}`, 20, 80);
-      doc.text(`- Has URL: ${file && file.url ? 'Yes' : 'No'}`, 20, 90);
-      doc.text(`- Has Data: ${file && file.data ? 'Yes' : 'No'}`, 20, 100);
+      doc.text(`- Properties: ${Object.keys(file || {}).join(', ')}`, 20, 90);
       
-      doc.text('Debug Information:', 20, 120);
-      doc.text('This PDF was generated to test the', 20, 130);
-      doc.text('lab report viewing functionality.', 20, 140);
-      doc.text('If you can see this, the button works!', 20, 150);
+      doc.text('Status:', 20, 110);
+      doc.text('This lab report was uploaded before the file', 20, 120);
+      doc.text('storage system was implemented.', 20, 130);
+      doc.text('', 20, 140);
+      doc.text('To view lab reports properly:', 20, 150);
+      doc.text('1. Re-upload the PDF file', 20, 160);
+      doc.text('2. The new system will store files correctly', 20, 170);
+      doc.text('3. You will be able to view them normally', 20, 180);
       
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       
-      console.log('PDF generated and opened successfully');
+      console.log('Fallback PDF generated with instructions');
+      
     } catch (error) {
-      console.error('Error creating PDF:', error);
-      alert('Error creating lab report viewer. Please check console for details.');
+      console.error('Error viewing lab report:', error);
+      alert('Error viewing lab report. Please check console for details.');
     }
   };
 

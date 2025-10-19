@@ -10,10 +10,55 @@ exports.createPatient = async (req, res) => {
             patientData.id = `P${Date.now()}`;
         }
 
+        // Handle data type conversions for FormData
+        if (patientData.age && patientData.age !== 'null' && patientData.age !== '') {
+            patientData.age = parseInt(patientData.age);
+        } else {
+            patientData.age = null;
+        }
+
+        // Parse prescribedMedicines if it's a string (from FormData)
+        if (typeof patientData.prescribedMedicines === 'string') {
+            try {
+                patientData.prescribedMedicines = JSON.parse(patientData.prescribedMedicines);
+            } catch (e) {
+                console.error('Error parsing prescribedMedicines:', e);
+                patientData.prescribedMedicines = [];
+            }
+        }
+
+        // Ensure prescribedMedicines is an array
+        if (!Array.isArray(patientData.prescribedMedicines)) {
+            patientData.prescribedMedicines = [];
+        }
+
+        // Convert quantity to number for each medicine
+        if (Array.isArray(patientData.prescribedMedicines)) {
+            patientData.prescribedMedicines = patientData.prescribedMedicines.map(medicine => ({
+                ...medicine,
+                quantity: parseInt(medicine.quantity) || 0
+            }));
+        }
+
+        // Handle uploaded lab report files
+        if (req.files && req.files.length > 0) {
+            const labReports = req.files.map(file => ({
+                name: file.originalname,
+                filename: file.filename,
+                path: file.path,
+                size: file.size,
+                type: file.mimetype,
+                url: `http://localhost:8000/uploads/${file.filename}`
+            }));
+            patientData.labReports = labReports;
+        }
+
+        console.log('Processed patient data:', patientData);
         const patient = new Patient(patientData);
         await patient.save();
         res.status(201).json(patient);
         } catch (error) {
+            console.error('Error creating patient:', error);
             res.status(400).json({ message: error.message});
         }
     };
@@ -42,14 +87,61 @@ exports.getPatientById = async (req,res) => {
 //Update patient
 exports.updatePatient = async (req, res) => {
     try{
+        const updateData = req.body;
+        
+        // Handle data type conversions for FormData
+        if (updateData.age && updateData.age !== 'null' && updateData.age !== '') {
+            updateData.age = parseInt(updateData.age);
+        } else if (updateData.age === 'null' || updateData.age === '') {
+            updateData.age = null;
+        }
+
+        // Parse prescribedMedicines if it's a string (from FormData)
+        if (typeof updateData.prescribedMedicines === 'string') {
+            try {
+                updateData.prescribedMedicines = JSON.parse(updateData.prescribedMedicines);
+            } catch (e) {
+                console.error('Error parsing prescribedMedicines:', e);
+                updateData.prescribedMedicines = [];
+            }
+        }
+
+        // Ensure prescribedMedicines is an array
+        if (!Array.isArray(updateData.prescribedMedicines)) {
+            updateData.prescribedMedicines = [];
+        }
+
+        // Convert quantity to number for each medicine
+        if (Array.isArray(updateData.prescribedMedicines)) {
+            updateData.prescribedMedicines = updateData.prescribedMedicines.map(medicine => ({
+                ...medicine,
+                quantity: parseInt(medicine.quantity) || 0
+            }));
+        }
+        
+        // Handle uploaded lab report files
+        if (req.files && req.files.length > 0) {
+            const labReports = req.files.map(file => ({
+                name: file.originalname,
+                filename: file.filename,
+                path: file.path,
+                size: file.size,
+                type: file.mimetype,
+                url: `http://localhost:8000/uploads/${file.filename}`
+            }));
+            updateData.labReports = labReports;
+        }
+
+        console.log('Processed update data:', updateData);
         const updated = await Patient.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updateData,
             {new: true}
         );
         if(!updated) return res.status(404).json({message: "User not found"});
         res.json(updated);
     } catch (error) {
+        console.error('Error updating patient:', error);
         res.status(400).json({message:error.message});
     }
 };

@@ -113,18 +113,20 @@ const AppContent = () => {
     loadData();
   }, []);
 
-  // Fetch deletion request count for users
+  // Fetch deletion request count for users only (not admin)
   useEffect(() => {
     const fetchDeletionRequestCount = async () => {
-      if (userType === 'user' && userData?.indexNo) {
-        try {
+      try {
+        if (userType === 'user' && userData?.indexNo) {
+          // Fetch deletion requests for specific user
           const response = await axios.get(`http://localhost:8000/api/deletionRequest/pending-count/${userData.indexNo}`);
           setDeletionRequestCount(response.data.count);
-        } catch (error) {
-          console.error('Error fetching deletion request count:', error);
+        } else {
+          // Admin doesn't need deletion request count
           setDeletionRequestCount(0);
         }
-      } else {
+      } catch (error) {
+        console.error('Error fetching deletion request count:', error);
         setDeletionRequestCount(0);
       }
     };
@@ -135,25 +137,75 @@ const AppContent = () => {
   // Fetch notifications from backend for users
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (userType === 'user' && userData?.indexNo) {
+      try {
+        let notificationsToFetch = [];
+        
+        // Fetch user notifications if user is logged in
+        if (userType === 'user' && userData?.indexNo) {
+          const userResponse = await axios.get(`http://localhost:8000/api/notifications/patient/${userData.indexNo}`);
+          notificationsToFetch = [...notificationsToFetch, ...userResponse.data];
+        }
+        
+        // Fetch admin notifications if user is admin
+        if (userType === 'admin') {
+          const adminResponse = await axios.get(`http://localhost:8000/api/notifications/patient/admin`);
+          notificationsToFetch = [...notificationsToFetch, ...adminResponse.data];
+        }
+        
+        console.log('Fetched notifications from backend:', notificationsToFetch);
+        
+        // Convert backend notifications to frontend format
+        const formattedNotifications = notificationsToFetch.map(notification => ({
+          id: notification.notificationID || notification._id,
+          type: notification.type === 'deletion_request_received' ? 'warning' : 
+                notification.type === 'deletion_request_admin' ? 'warning' :
+                notification.type === 'deletion_request_approved' ? 'success' : 
+                notification.type === 'deletion_request_rejected' ? 'warning' : 'info',
+          icon: notification.type === 'deletion_request_received' ? '⚠️' : 
+                notification.type === 'deletion_request_admin' ? '📋' :
+                notification.type === 'deletion_request_approved' ? '✅' : 
+                notification.type === 'deletion_request_rejected' ? '❌' : '📋',
+          title: notification.type === 'deletion_request_received' ? 'Deletion Request Received' : 
+                 notification.type === 'deletion_request_admin' ? 'Medical Record Deletion Request' :
+                 notification.type === 'deletion_request_approved' ? 'Deletion Request Approved' : 
+                 notification.type === 'deletion_request_rejected' ? 'Deletion Request Rejected' : 'Notification',
+          description: notification.message,
+          category: notification.category || 'patient',
+          timestamp: notification.createdAt || notification.timestamp || new Date().toISOString(),
+          status: 'new'
+        }));
+        
+        // Add notifications to the context
+        formattedNotifications.forEach(notification => {
+          addNotification(notification);
+        });
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, [userType, userData?.indexNo, addNotification]);
+
+  // Set up periodic notification refresh for admin users
+  useEffect(() => {
+    let interval;
+    
+    if (userType === 'admin') {
+      // Refresh notifications every 30 seconds for admin users
+      interval = setInterval(async () => {
         try {
-          const response = await axios.get(`http://localhost:8000/api/notifications/patient/${userData.indexNo}`);
-          console.log('Fetched notifications from backend:', response.data);
+          const adminResponse = await axios.get(`http://localhost:8000/api/notifications/patient/admin`);
+          console.log('Periodic admin notifications fetch:', adminResponse.data);
           
-          // Convert backend notifications to frontend format
-          const formattedNotifications = response.data.map(notification => ({
+          // Convert and add new admin notifications
+          const formattedNotifications = adminResponse.data.map(notification => ({
             id: notification.notificationID || notification._id,
-            type: notification.type === 'deletion_request_received' ? 'warning' : 
-                  notification.type === 'deletion_request_approved' ? 'success' : 
-                  notification.type === 'deletion_request_rejected' ? 'warning' : 'info',
-            icon: notification.type === 'deletion_request_received' ? '⚠️' : 
-                  notification.type === 'deletion_request_approved' ? '✅' : 
-                  notification.type === 'deletion_request_rejected' ? '❌' : '📋',
-            title: notification.type === 'deletion_request_received' ? 'Deletion Request Received' : 
-                   notification.type === 'deletion_request_approved' ? 'Deletion Request Approved' : 
-                   notification.type === 'deletion_request_rejected' ? 'Deletion Request Rejected' : 'Notification',
+            type: notification.type === 'deletion_request_admin' ? 'warning' : 'info',
+            icon: notification.type === 'deletion_request_admin' ? '📋' : '📋',
+            title: notification.type === 'deletion_request_admin' ? 'Medical Record Deletion Request' : 'Notification',
             description: notification.message,
-            category: notification.category || 'patient',
+            category: notification.category || 'admin',
             timestamp: notification.createdAt || notification.timestamp || new Date().toISOString(),
             status: 'new'
           }));
@@ -163,13 +215,17 @@ const AppContent = () => {
             addNotification(notification);
           });
         } catch (error) {
-          console.error('Error fetching notifications:', error);
+          console.error('Error refreshing admin notifications:', error);
         }
+      }, 30000); // 30 seconds
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
       }
     };
-
-    fetchNotifications();
-  }, [userType, userData?.indexNo, addNotification]);
+  }, [userType, addNotification]);
 
   // Function to refresh patient data when a deletion request is approved
   const handlePatientDeleted = async () => {
@@ -692,7 +748,47 @@ const AppContent = () => {
       
       // Save to database via API
       console.log('Sending patient data to API:', newPatient);
-      const response = await axios.post('http://localhost:8000/api/patient/', newPatient);
+      
+      let response;
+      if (newPatient.labReports && Array.isArray(newPatient.labReports) && newPatient.labReports.length > 0) {
+        // If there are lab reports, send as FormData
+        const formData = new FormData();
+        
+        // Add all patient data fields
+        Object.keys(newPatient).forEach(key => {
+          if (key === 'labReports') {
+            // Add lab report files
+            newPatient.labReports.forEach((file, index) => {
+              if (file instanceof File) {
+                formData.append('labReports', file);
+              }
+            });
+          } else if (key === 'prescribedMedicines') {
+            // Stringify arrays
+            formData.append(key, JSON.stringify(newPatient[key]));
+          } else if (key === 'age') {
+            // Handle age specifically - don't send null as string
+            if (newPatient[key] !== null && newPatient[key] !== undefined) {
+              formData.append(key, newPatient[key]);
+            }
+          } else {
+            // Don't send null values as strings
+            if (newPatient[key] !== null && newPatient[key] !== undefined) {
+              formData.append(key, newPatient[key]);
+            }
+          }
+        });
+        
+        response = await axios.post('http://localhost:8000/api/patient/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        // If no lab reports, send as JSON
+        response = await axios.post('http://localhost:8000/api/patient/', newPatient);
+      }
+      
       console.log('Patient saved to database:', response.data);
       
       // Update local state
@@ -741,7 +837,55 @@ const AppContent = () => {
     try {
       // Update in database via API - use _id if available, otherwise use id
       const patientId = updatedPatient._id || updatedPatient.id;
-      const response = await axios.put(`http://localhost:8000/api/patient/${patientId}`, updatedPatient);
+      
+      let response;
+      if (updatedPatient.labReports && Array.isArray(updatedPatient.labReports) && updatedPatient.labReports.length > 0) {
+        // Check if any of the lab reports are File objects (new uploads)
+        const hasNewFiles = updatedPatient.labReports.some(file => file instanceof File);
+        
+        if (hasNewFiles) {
+          // If there are new file uploads, send as FormData
+          const formData = new FormData();
+          
+          // Add all patient data fields
+          Object.keys(updatedPatient).forEach(key => {
+            if (key === 'labReports') {
+              // Add lab report files
+              updatedPatient.labReports.forEach((file, index) => {
+                if (file instanceof File) {
+                  formData.append('labReports', file);
+                }
+              });
+            } else if (key === 'prescribedMedicines') {
+              // Stringify arrays
+              formData.append(key, JSON.stringify(updatedPatient[key]));
+            } else if (key === 'age') {
+              // Handle age specifically - don't send null as string
+              if (updatedPatient[key] !== null && updatedPatient[key] !== undefined) {
+                formData.append(key, updatedPatient[key]);
+              }
+            } else {
+              // Don't send null values as strings
+              if (updatedPatient[key] !== null && updatedPatient[key] !== undefined) {
+                formData.append(key, updatedPatient[key]);
+              }
+            }
+          });
+          
+          response = await axios.put(`http://localhost:8000/api/patient/${patientId}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        } else {
+          // If no new files, send as JSON
+          response = await axios.put(`http://localhost:8000/api/patient/${patientId}`, updatedPatient);
+        }
+      } else {
+        // If no lab reports, send as JSON
+        response = await axios.put(`http://localhost:8000/api/patient/${patientId}`, updatedPatient);
+      }
+      
       console.log('Patient updated in database:', response.data);
       
       // Update local state
@@ -841,6 +985,9 @@ const AppContent = () => {
     setActiveSection('dashboard');
   };
 
+  const handleClearDeletionRequestCount = () => {
+    setDeletionRequestCount(0);
+  };
 
   const renderSection = () => {
     const sectionProps = {
@@ -958,6 +1105,7 @@ const AppContent = () => {
                 onNavigateToDeletionRequests={() => handleSectionChange('deletion-requests')}
                 onNavigateToProfile={() => handleSectionChange('personal-info')}
                 onLogout={handleLogout}
+                onClearDeletionRequestCount={handleClearDeletionRequestCount}
               />
               
               <div className="section active">

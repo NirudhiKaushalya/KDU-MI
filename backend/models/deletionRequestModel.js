@@ -41,6 +41,13 @@ const deletionRequestSchema = new mongoose.Schema(
     },
     patientResponse: { 
       type: String 
+    },
+    dismissedByPatient: { 
+      type: Boolean, 
+      default: false 
+    },
+    dismissedAt: { 
+      type: Date 
     }
   },
   { timestamps: true }

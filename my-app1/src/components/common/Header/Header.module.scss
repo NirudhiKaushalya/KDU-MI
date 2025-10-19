@@ -271,6 +271,12 @@
   gap: 15px;
 }
 
+.headerIcons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .notificationBell {
   position: relative;
   cursor: pointer;
@@ -325,6 +331,63 @@
   100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+  }
+}
+
+.deletionRequestIcon {
+  position: relative;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(245, 158, 11, 0.1);
+    transform: scale(1.1);
+  }
+  
+  i {
+    font-size: 20px;
+    color: #f59e0b;
+    transition: color 0.3s ease;
+  }
+  
+  &:hover i {
+    color: #d97706;
+  }
+}
+
+.deletionRequestBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: #f59e0b;
+  color: white;
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulseWarning 1.5s infinite;
+}
+
+@keyframes pulseWarning {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
   }
 }
 

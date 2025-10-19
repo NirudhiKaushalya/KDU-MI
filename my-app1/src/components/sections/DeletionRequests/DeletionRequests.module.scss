@@ -177,6 +177,9 @@
 
 .statusSection {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .badge {
@@ -205,6 +208,35 @@
   background: #fee2e2;
   color: #991b1b;
   border: 1px solid #ef4444;
+}
+
+.dismissButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+
+  &:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  i {
+    font-size: 14px;
+  }
 }
 
 .cardBody {

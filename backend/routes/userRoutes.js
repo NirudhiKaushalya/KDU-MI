@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { registerUser, loginUser, getUserByEmail, getUserByIndexNo, updateUser } = require("../controllers/authController");
+const { registerUser, loginUser, getUserByEmail, getUserByIndexNo, updateUser, getAllUsers } = require("../controllers/authController");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 // Register
@@ -17,7 +17,8 @@ router.get("/getByIndexNo/:indexNo", getUserByIndexNo);
 
 // Update user by ID
 router.put("/update/:id", updateUser);
-router.post("/register", upload.single("pdfFile"), registerUser);
 
+// Get all registered users (for admin dashboard)
+router.get("/all", getAllUsers);
 
 module.exports = router;

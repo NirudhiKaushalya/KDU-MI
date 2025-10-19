@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './UserHeader.module.scss';
 
-const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0, deletionRequestCount = 0, onNavigateToNotifications, onNavigateToDeletionRequests, onNavigateToProfile, onLogout }) => {
+const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0, deletionRequestCount = 0, onNavigateToNotifications, onNavigateToDeletionRequests, onNavigateToProfile, onLogout, onClearDeletionRequestCount }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -21,6 +21,16 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
       onNavigateToProfile();
     }
     setShowDropdown(false);
+  };
+
+  const handleDeletionRequestClick = () => {
+    if (onNavigateToDeletionRequests) {
+      onNavigateToDeletionRequests();
+    }
+    // Clear the deletion request count when user views the page
+    if (onClearDeletionRequestCount) {
+      onClearDeletionRequestCount();
+    }
   };
 
   // Close dropdown when clicking outside
@@ -49,6 +59,17 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
             <i className="fas fa-bell"></i>
             {notificationCount > 0 && (
               <span className={styles.notificationBadge}>{notificationCount}</span>
+            )}
+          </button>
+          
+          <button 
+            className={styles.deletionRequestButton}
+            onClick={handleDeletionRequestClick}
+            title="View deletion requests"
+          >
+            <i className="fas fa-exclamation-triangle"></i>
+            {deletionRequestCount > 0 && (
+              <span className={styles.deletionRequestBadge}>{deletionRequestCount}</span>
             )}
           </button>
           

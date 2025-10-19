@@ -5,6 +5,7 @@ const {
   getDeletionRequestsByPatient,
   getAllDeletionRequests,
   respondToDeletionRequest,
+  dismissDeletionRequest,
   getPendingRequestsCount
 } = require("../controllers/deletionRequestController");
 
@@ -20,10 +21,14 @@ router.get("/all", getAllDeletionRequests);
 // Respond to a deletion request (approve/reject)
 router.put("/respond/:requestId", respondToDeletionRequest);
 
+// Dismiss a deletion request (hide from patient view)
+router.put("/dismiss/:requestId", dismissDeletionRequest);
+
 // Get pending requests count for notifications
 router.get("/pending-count/:indexNo", getPendingRequestsCount);
 
 module.exports = router;
+
 
 
 

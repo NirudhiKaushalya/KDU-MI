@@ -244,3 +244,23 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Get all registered users (for admin dashboard)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, {
+      _id: 1,
+      userName: 1,
+      indexNo: 1,
+      email: 1,
+      role: 1,
+      department: 1,
+      intake: 1,
+      createdAt: 1
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
