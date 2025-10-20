@@ -1,21 +1,35 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import styles from './UserDashboard.module.scss';
 
-const UserDashboard = ({ userName = 'User' }) => {
+const UserDashboard = ({ userName = 'User', userData = null }) => {
   const { notifications } = useNotifications();
-  const [height, setHeight] = useState(() => {
-    return localStorage.getItem(`bmi-height-${userName}`) || '';
-  });
-  const [weight, setWeight] = useState(() => {
-    return localStorage.getItem(`bmi-weight-${userName}`) || '';
-  });
-  const [bmi, setBmi] = useState(() => {
-    return localStorage.getItem(`bmi-value-${userName}`) || null;
-  });
-  const [bmiCategory, setBmiCategory] = useState(() => {
-    return localStorage.getItem(`bmi-category-${userName}`) || '';
-  });
+  // Use a stable per-user key (prefer email; fallback to formatted userName)
+  const userKey = (userData?.email || userName || 'User').toLowerCase();
+
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [bmi, setBmi] = useState(null);
+  const [bmiCategory, setBmiCategory] = useState('');
+
+  // Load BMI from backend when user changes
+  useEffect(() => {
+    const fetchBmi = async () => {
+      if (!userData?._id) return;
+      try {
+        const res = await axios.get(`http://localhost:8000/api/bmi/${userData._id}`);
+        const record = res.data;
+        setHeight(String(record.heightCm || ''));
+        setWeight(String(record.weightKg || ''));
+        setBmi(record.bmiValue != null ? String(record.bmiValue) : null);
+        setBmiCategory(record.bmiCategory || '');
+      } catch (err) {
+        // 404 is fine if no BMI yet
+      }
+    };
+    fetchBmi();
+  }, [userData?._id]);
   const [userActivities, setUserActivities] = useState([]);
   const [showAllActivities, setShowAllActivities] = useState(false);
 
@@ -41,11 +55,17 @@ const UserDashboard = ({ userName = 'User' }) => {
       }
       setBmiCategory(category);
 
-      // Save to localStorage
-      localStorage.setItem(`bmi-height-${userName}`, height);
-      localStorage.setItem(`bmi-weight-${userName}`, weight);
-      localStorage.setItem(`bmi-value-${userName}`, bmiValue);
-      localStorage.setItem(`bmi-category-${userName}`, category);
+      // Persist to backend BMI collection (upsert)
+      if (userData?._id) {
+        axios.put(`http://localhost:8000/api/bmi/${userData._id}`,
+          {
+            heightCm: parseFloat(height),
+            weightKg: parseFloat(weight),
+            bmiValue: parseFloat(bmiValue),
+            bmiCategory: category
+          }
+        ).catch(() => {});
+      }
 
       // Add BMI calculation to activities
       const bmiActivity = {
@@ -68,11 +88,10 @@ const UserDashboard = ({ userName = 'User' }) => {
     setBmi(null);
     setBmiCategory('');
     
-    // Clear from localStorage
-    localStorage.removeItem(`bmi-height-${userName}`);
-    localStorage.removeItem(`bmi-weight-${userName}`);
-    localStorage.removeItem(`bmi-value-${userName}`);
-    localStorage.removeItem(`bmi-category-${userName}`);
+    // Clear from backend
+    if (userData?._id) {
+      axios.delete(`http://localhost:8000/api/bmi/${userData._id}`).catch(() => {});
+    }
   };
 
   const clearAllActivities = () => {

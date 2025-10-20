@@ -36,6 +36,7 @@ const Footer = ({ onSectionChange, userRole = 'user' }) => {
   const userNavigationLinks = [
     { name: 'Dashboard', key: 'dashboard' },
     { name: 'Notifications', key: 'notifications' },
+    { name: 'Deletion Requests', key: 'deletion-requests' },
     { name: 'Personal Info', key: 'personal-info' },
     { name: 'Medical History', key: 'medical-history' }
   ];

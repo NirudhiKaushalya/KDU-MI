@@ -10,6 +10,7 @@ const notificationRoutes =require("./routes/notificationRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const userRoutes = require("./routes/userRoutes");
+const bmiRoutes = require("./routes/bmiRoutes");
 
 
 const multer = require("multer");
@@ -48,6 +49,7 @@ app.use("/api/notification", notificationRoutes);
 app.use("/api/patient", patientRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/bmi", bmiRoutes);
 
 // Set default environment variables if not provided
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/kdu-medical-unit";
