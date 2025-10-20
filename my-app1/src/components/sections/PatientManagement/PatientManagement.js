@@ -95,8 +95,27 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
     const matchesMinAge = !appliedFilters.minAge || patient.age >= parseInt(appliedFilters.minAge);
     const matchesMaxAge = !appliedFilters.maxAge || patient.age <= parseInt(appliedFilters.maxAge);
     
-    // Date filter (removed since we no longer have date fields)
+    // Date filter: support filtering by admittedDate or consultedDate
     let matchesDate = true;
+    if (appliedFilters.startDate || appliedFilters.endDate) {
+      const rawDate = patient.admittedDate || patient.consultedDate || '';
+      // Normalize patient date to comparable Date object; if invalid, exclude when a range is applied
+      const recordDate = rawDate ? new Date(rawDate) : null;
+      const startDate = appliedFilters.startDate ? new Date(appliedFilters.startDate) : null;
+      const endDate = appliedFilters.endDate ? new Date(appliedFilters.endDate) : null;
+
+      if (!recordDate || isNaN(recordDate.getTime())) {
+        matchesDate = false;
+      } else {
+        if (startDate && recordDate < startDate) matchesDate = false;
+        if (endDate) {
+          // include entire end day
+          const endOfDay = new Date(endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (recordDate > endOfDay) matchesDate = false;
+        }
+      }
+    }
 
     return matchesSearch && matchesIndexNumber && matchesCondition && matchesMinAge && matchesMaxAge && matchesDate;
   });
@@ -109,6 +128,11 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
     }
     if (appliedFilters.indexNumber) {
       activeFilters.push(`All records for Index: ${appliedFilters.indexNumber}`);
+    }
+    if (appliedFilters.startDate || appliedFilters.endDate) {
+      const start = appliedFilters.startDate || 'Any';
+      const end = appliedFilters.endDate || 'Any';
+      activeFilters.push(`Date: ${start} to ${end}`);
     }
     if (appliedFilters.minAge || appliedFilters.maxAge) {
       const ageFilter = `${appliedFilters.minAge || '0'}-${appliedFilters.maxAge || '∞'}`;

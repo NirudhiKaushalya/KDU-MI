@@ -87,7 +87,6 @@ export const NotificationProvider = ({ children }) => {
                  existing.status !== 'dismissed';
         }
         
-        // For success notifications, allow them to show (no deduplication)
         if (newNotification.category === 'success') {
           return false;
         }

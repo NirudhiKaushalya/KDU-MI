@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styles from './ReportModal.module.scss';
+import { useSettings } from '../../..//contexts/SettingsContext';
 
 const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [], medicalRecords = [], onAddReport, report = null }) => {
   const [dateRange, setDateRange] = useState({
@@ -12,6 +13,8 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
     patientId: ''
   });
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const { settings } = useSettings();
 
   if (!isOpen) return null;
 
@@ -157,7 +160,15 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
             const expiryDate = new Date(med.expiryDate);
             const today = new Date();
             const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-            return daysUntilExpiry <= 90; // Within 90 days
+
+            // Respect settings' expiryAlertDays; default to 7 if missing
+            const alertWindowDays = settings?.expiryAlertDays || 7;
+
+            // Optionally apply date range if provided
+            const startOk = !dateRange.startDate || expiryDate >= new Date(dateRange.startDate);
+            const endOk = !dateRange.endDate || expiryDate <= new Date(dateRange.endDate);
+
+            return daysUntilExpiry >= 0 && daysUntilExpiry <= alertWindowDays && startOk && endOk;
           }),
           columns: ['Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry']
         };

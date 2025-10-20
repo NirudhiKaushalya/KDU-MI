@@ -17,8 +17,9 @@ const Settings = () => {
   }, [settings]);
 
   const handleExpiryDaysChange = (e) => {
-    const newValue = parseInt(e.target.value);
-    setLocalSettings(prev => ({ ...prev, expiryAlertDays: newValue }));
+    const parsed = parseInt(e.target.value, 10);
+    const clamped = isNaN(parsed) ? '' : Math.max(1, Math.min(30, parsed));
+    setLocalSettings(prev => ({ ...prev, expiryAlertDays: clamped }));
     setHasChanges(true);
   };
 
@@ -162,8 +163,10 @@ const Settings = () => {
                 className={styles.numberInput}
                 value={localSettings.expiryAlertDays}
                 onChange={handleExpiryDaysChange}
+                onWheel={(e) => e.currentTarget.blur()}
                 min="1"
                 max="30"
+                step="1"
               />
               <p className={styles.inputDescription}>
                 Set the number of days before a medicine's expiry date to receive an alert.
