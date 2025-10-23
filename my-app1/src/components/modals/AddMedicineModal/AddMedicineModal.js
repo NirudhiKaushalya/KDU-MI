@@ -34,14 +34,19 @@ const AddMedicineModal = ({ onClose, onAddMedicine }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Check for low stock immediately after adding
-    const isLowStock = parseInt(formData.quantity) <= parseInt(formData.lowStockThreshold);
+    // Determine stock level based on quantity
+    let stockLevel = 'In Stock';
+    if (parseInt(formData.quantity) === 0) {
+      stockLevel = 'Out of Stock';
+    } else if (parseInt(formData.quantity) <= parseInt(formData.lowStockThreshold)) {
+      stockLevel = 'Low Stock';
+    }
     
     // Generate a random ID for demo purposes
     const newMedicine = {
       id: `M${Math.floor(10000 + Math.random() * 90000)}`,
       ...formData,
-      stockLevel: isLowStock ? 'Low Stock' : 'In Stock'
+      stockLevel: stockLevel
     };
     
     // Always show a success notification when medicine is added

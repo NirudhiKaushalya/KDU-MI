@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNotifications } from '../../../contexts/NotificationContext';
+import { getUserPhotoUrl, hasUserPhoto } from '../../../utils/photoUtils';
 import styles from './PersonalInfo.module.scss';
 
 const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) => {
@@ -185,9 +186,9 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
         <div className={styles.profileContent}>
           <div className={styles.profileSection}>
             <div className={styles.profilePicture}>
-              {(userData?.photoPreview || userData?.photoData?.data) ? (
+              {hasUserPhoto(userData) ? (
                 <img 
-                  src={userData.photoPreview || userData.photoData.data} 
+                  src={getUserPhotoUrl(userData)} 
                   alt="Profile" 
                   className={styles.profileImage}
                   onError={(e) => {
@@ -199,7 +200,7 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
               ) : null}
               <div 
                 className={styles.profilePlaceholder}
-                style={{ display: (userData?.photoPreview || userData?.photoData?.data) ? 'none' : 'flex' }}
+                style={{ display: hasUserPhoto(userData) ? 'none' : 'flex' }}
               >
                 <i className="fas fa-user"></i>
               </div>

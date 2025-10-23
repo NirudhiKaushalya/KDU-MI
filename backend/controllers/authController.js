@@ -4,6 +4,11 @@ const jwt = require("jsonwebtoken");
 
 exports.registerUser = async (req, res) => {
   try {
+    // Check for multer errors first
+    if (req.fileValidationError) {
+      return res.status(400).json({ message: req.fileValidationError });
+    }
+
     const { userName, indexNo, gender, dob, email, contactNo, role, intake, department, password, additionalNotes, photoPreview, photoFile } = req.body;
 
     const userExists = await User.findOne({ email });
@@ -20,27 +25,25 @@ exports.registerUser = async (req, res) => {
       };
     }
 
-    // Handle photo data - prioritize multer file upload, fallback to frontend base64 data
+    // Handle photo data - store file path instead of base64 data
     let photoData = null;
+    console.log('Registration - req.file:', req.file);
+    console.log('Registration - req.body:', req.body);
+    
     if (req.file && req.file.mimetype.startsWith('image/')) {
-      // Handle multer file upload for photos
+      // Handle multer file upload for photos - store file path
       photoData = {
         name: req.file.originalname,
         size: req.file.size,
         type: req.file.mimetype,
-        data: req.file.buffer.toString('base64') // Convert buffer to base64
+        path: req.file.path, // Store file path instead of base64
+        filename: req.file.filename
       };
-      console.log('Photo uploaded via multer:', photoData.name, photoData.size, photoData.type);
-    } else if (photoFile && photoPreview) {
-      // Handle frontend base64 photo data
-      photoData = {
-        name: photoFile.name,
-        size: photoFile.size,
-        type: photoFile.type,
-        data: photoPreview // Store base64 data
-      };
-      console.log('Photo uploaded via frontend:', photoData.name, photoData.size, photoData.type);
+      console.log('Photo uploaded via multer:', photoData.name, photoData.size, photoData.type, photoData.path);
     }
+    // Note: Removed base64 handling to prevent "Field value too long" errors
+    
+    console.log('Registration - Final photoData:', photoData);
 
     const user = await User.create({
       userName,
@@ -53,8 +56,8 @@ exports.registerUser = async (req, res) => {
       intake,
       department,
       additionalNotes: additionalNotes || '',
-      photoPreview: photoPreview || null,
-      photoData: photoData,
+      photoPreview: null, // No longer using base64 preview
+      photoData: photoData, // Will be null if no photo uploaded
       password: hashedPassword,
       pdfFile
     });

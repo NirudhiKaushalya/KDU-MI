@@ -23,6 +23,9 @@ app.use(express.json());//accept json request
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve profile images
+app.use('/uploads/profiles', express.static(path.join(__dirname, 'uploads/profiles')));
+
 // Test endpoint to verify file serving
 app.get('/test-uploads', (req, res) => {
   const fs = require('fs');

@@ -54,6 +54,20 @@ const AppContent = () => {
   // Reports data - stores generated reports
   const [recentReports, setRecentReports] = useState([]);
 
+  // Function to recalculate stock level based on quantity and threshold
+  const recalculateStockLevel = (medicine) => {
+    const quantity = parseInt(medicine.quantity) || 0;
+    const threshold = parseInt(medicine.lowStockThreshold) || 0;
+    
+    if (quantity === 0) {
+      return 'Out of Stock';
+    } else if (quantity <= threshold) {
+      return 'Low Stock';
+    } else {
+      return 'In Stock';
+    }
+  };
+
   // Load data from database on app start
   useEffect(() => {
     const loadData = async () => {
@@ -65,8 +79,30 @@ const AppContent = () => {
 
         // Load medicines from database
         const medicinesResponse = await axios.get('http://localhost:8000/api/medicines/');
-        setMedicines(medicinesResponse.data);
-        console.log('Loaded medicines from database:', medicinesResponse.data);
+        // Recalculate stock levels for all medicines loaded from database
+        const medicinesWithCorrectStockLevel = medicinesResponse.data.map(medicine => ({
+          ...medicine,
+          stockLevel: recalculateStockLevel(medicine)
+        }));
+        setMedicines(medicinesWithCorrectStockLevel);
+        console.log('Loaded medicines from database with recalculated stock levels:', medicinesWithCorrectStockLevel);
+
+        // Update database with correct stock levels (in background, don't wait for it)
+        medicinesWithCorrectStockLevel.forEach(async (medicine) => {
+          const originalMedicine = medicinesResponse.data.find(m => m._id === medicine._id || m.id === medicine.id);
+          if (originalMedicine && originalMedicine.stockLevel !== medicine.stockLevel) {
+            try {
+              const medicineId = medicine._id || medicine.id;
+              await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, {
+                ...medicine,
+                stockLevel: medicine.stockLevel
+              });
+              console.log(`Updated stock level in database for ${medicine.medicineName}: ${medicine.stockLevel}`);
+            } catch (error) {
+              console.log(`Failed to update stock level for ${medicine.medicineName}:`, error);
+            }
+          }
+        });
       } catch (error) {
         console.log('Database not available, using local state only');
         
@@ -102,6 +138,16 @@ const AppContent = () => {
               lowStockThreshold: 15,
               expiryDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Expired 2 days ago
               stockLevel: 'Low Stock'
+            },
+            {
+              id: 'TEST004',
+              medicineName: 'Paracetamol',
+              category: 'Analgesics',
+              brand: 'Generic',
+              quantity: 0, // Out of stock
+              lowStockThreshold: 20,
+              expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+              stockLevel: 'Out of Stock'
             }
           ];
           setMedicines(testMedicines);
@@ -311,6 +357,9 @@ const AppContent = () => {
     setUserName(formattedName);
     // Store user data if provided from login
     if (loginUserData) {
+      console.log('Login - Received userData:', loginUserData);
+      console.log('Login - photoData:', loginUserData.photoData);
+      console.log('Login - photoPreview:', loginUserData.photoPreview);
       setUserData(loginUserData);
     }
     
@@ -352,7 +401,10 @@ const AppContent = () => {
 
   const handleRegistration = (registrationData) => {
     // Here you would typically handle the registration
-    console.log('New user registered:', registrationData);
+    console.log('Registration - Received data:', registrationData);
+    console.log('Registration - photoData:', registrationData?.photoData);
+    console.log('Registration - photoPreview:', registrationData?.photoPreview);
+    
     // Use the userName field from registration data for display
     const userName = formatUserName(registrationData.userName, registrationData.email);
     // Store the complete user data for use in PersonalInfo component
@@ -662,7 +714,7 @@ const AppContent = () => {
               return {
                 ...medicine,
                 quantity: newStock.toString(),
-                stockLevel: newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock'
+                stockLevel: newStock === 0 ? 'Out of Stock' : (newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock')
               };
             }
             return medicine;
@@ -688,7 +740,7 @@ const AppContent = () => {
               const updatedMedicineData = {
                 ...medicine,
                 quantity: newStock.toString(),
-                stockLevel: newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock'
+                stockLevel: newStock === 0 ? 'Out of Stock' : (newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock')
               };
               
               // Use _id if available, otherwise use id

@@ -17,7 +17,9 @@ const userSchema = new mongoose.Schema(
       name: { type: String },
       size: { type: Number },
       type: { type: String },
-      data: { type: String } // Base64 encoded photo data
+      data: { type: String }, // Base64 encoded photo data (for frontend uploads)
+      path: { type: String }, // File path (for multer uploads)
+      filename: { type: String } // Generated filename
     },
     photoPreview: { type: String }, // Added for frontend photo preview
     pdfFile: {

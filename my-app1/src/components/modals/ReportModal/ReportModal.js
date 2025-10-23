@@ -136,20 +136,27 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           columns: ['Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
         };
       case 'Low Stock Report':
+        let lowStockMedicines = medicines.filter(med => {
+          // Check if medicine has low stock based on quantity vs threshold
+          const hasLowStock = med.lowStockThreshold && 
+                             med.quantity && 
+                             parseInt(med.quantity) <= parseInt(med.lowStockThreshold);
+          
+          // Also check stock level if available
+          const isLowStockLevel = med.stockLevel === 'Low Stock' || med.stockLevel === 'Out of Stock';
+          
+          return hasLowStock || isLowStockLevel;
+        });
+
+        // Apply stock level filter if selected
+        if (filters.status) {
+          lowStockMedicines = lowStockMedicines.filter(med => med.stockLevel === filters.status);
+        }
+
         return {
           title: 'Low Stock Alert Report',
           description: 'Medicines that are running low on stock and need reordering',
-          data: medicines.filter(med => {
-            // Check if medicine has low stock based on quantity vs threshold
-            const hasLowStock = med.lowStockThreshold && 
-                               med.quantity && 
-                               parseInt(med.quantity) <= parseInt(med.lowStockThreshold);
-            
-            // Also check stock level if available
-            const isLowStockLevel = med.stockLevel === 'Low Stock' || med.stockLevel === 'Out of Stock';
-            
-            return hasLowStock || isLowStockLevel;
-          }),
+          data: lowStockMedicines,
           columns: ['Medicine Name', 'Category', 'Brand', 'Current Quantity', 'Low Stock Threshold', 'Stock Level']
         };
       case 'Expiry Report':
@@ -326,7 +333,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
             >
               <option value="">All Levels</option>
               <option value="Low Stock">Low Stock</option>
-              <option value="Critical">Critical</option>
+              <option value="Out of Stock">Out of Stock</option>
             </select>
           </div>
         );

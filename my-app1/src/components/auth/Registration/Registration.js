@@ -176,14 +176,9 @@ const Registration = ({ onBackToLogin, onRegister }) => {
           }
         });
         
-        // Add photo file if exists
+        // Add photo file if exists (only send the file, not base64 preview)
         if (photoFile) {
           formDataToSend.append('photo', photoFile);
-        }
-        
-        // Add photo preview as fallback
-        if (photoPreview) {
-          formDataToSend.append('photoPreview', photoPreview);
         }
         
         console.log('Registration data:', formData);
@@ -198,9 +193,10 @@ const Registration = ({ onBackToLogin, onRegister }) => {
         
         alert('Registration successful! You can now login with your credentials.');
         
-        // Navigate back to login
+        // Navigate back to login or auto-login with backend response data
         if (onRegister) {
-          onRegister(formData);
+          // Pass the backend response data which includes photo information
+          onRegister(response.data.user);
         } else {
           onBackToLogin();
         }

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { getUserPhotoUrl, hasUserPhoto } from '../../../utils/photoUtils';
 import styles from './UserHeader.module.scss';
 
 const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0, deletionRequestCount = 0, onNavigateToNotifications, onNavigateToDeletionRequests, onNavigateToProfile, onLogout, onClearDeletionRequestCount }) => {
@@ -86,9 +87,9 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
               onClick={handleAvatarClick}
               title="User menu"
             >
-              {(userData?.photoPreview || userData?.photoData?.data) ? (
+              {hasUserPhoto(userData) ? (
                 <img 
-                  src={userData.photoPreview || userData.photoData.data} 
+                  src={getUserPhotoUrl(userData)} 
                   alt="Profile" 
                   className={styles.avatarImage}
                   onError={(e) => {
@@ -100,7 +101,7 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
               ) : null}
               <span 
                 className={styles.avatarText}
-                style={{ display: (userData?.photoPreview || userData?.photoData?.data) ? 'none' : 'flex' }}
+                style={{ display: hasUserPhoto(userData) ? 'none' : 'flex' }}
               >
                 {userName.charAt(0).toUpperCase()}
               </span>
