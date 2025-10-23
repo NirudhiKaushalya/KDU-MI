@@ -5,6 +5,13 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Debug logging for photo data
+  useEffect(() => {
+    console.log("UserHeader - userData:", userData);
+    console.log("UserHeader - photoPreview:", userData?.photoPreview);
+    console.log("UserHeader - photoData:", userData?.photoData);
+  }, [userData]);
+
   const handleAvatarClick = () => {
     setShowDropdown(!showDropdown);
   };
@@ -84,10 +91,19 @@ const UserHeader = ({ userName = 'User', userData = null, notificationCount = 0,
                   src={userData.photoPreview || userData.photoData.data} 
                   alt="Profile" 
                   className={styles.avatarImage}
+                  onError={(e) => {
+                    console.log('Avatar image failed to load:', e.target.src);
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <span className={styles.avatarText}>{userName.charAt(0).toUpperCase()}</span>
-              )}
+              ) : null}
+              <span 
+                className={styles.avatarText}
+                style={{ display: (userData?.photoPreview || userData?.photoData?.data) ? 'none' : 'flex' }}
+              >
+                {userName.charAt(0).toUpperCase()}
+              </span>
             </div>
             <span className={styles.userName}>{userName}</span>
             

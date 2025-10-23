@@ -16,6 +16,8 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
       try {
         console.log("PersonalInfo useEffect - userName:", userName, "propUserData:", propUserData);
         console.log("propUserData email:", propUserData?.email);
+        console.log("propUserData photoPreview:", propUserData?.photoPreview);
+        console.log("propUserData photoData:", propUserData?.photoData);
         
         // If we have user data from props (from registration or login), use it
         if (propUserData) {
@@ -188,12 +190,19 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
                   src={userData.photoPreview || userData.photoData.data} 
                   alt="Profile" 
                   className={styles.profileImage}
+                  onError={(e) => {
+                    console.log('Profile image failed to load:', e.target.src);
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <div className={styles.profilePlaceholder}>
-                  <i className="fas fa-user"></i>
-                </div>
-              )}
+              ) : null}
+              <div 
+                className={styles.profilePlaceholder}
+                style={{ display: (userData?.photoPreview || userData?.photoData?.data) ? 'none' : 'flex' }}
+              >
+                <i className="fas fa-user"></i>
+              </div>
             </div>
             
             <div className={styles.userDetails}>

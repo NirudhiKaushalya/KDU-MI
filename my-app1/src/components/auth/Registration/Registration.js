@@ -166,26 +166,41 @@ const Registration = ({ onBackToLogin, onRegister }) => {
     
     if (validateForm()) {
       try {
-        const registrationData = { 
-          ...formData, 
-          photoFile: photoFile ? {
-            name: photoFile.name,
-            size: photoFile.size,
-            type: photoFile.type
-          } : null,
-          photoPreview: photoPreview // Include the base64 photo data
-        };
-        console.log('Registration data:', registrationData);
+        // Create FormData for file upload
+        const formDataToSend = new FormData();
         
-        // Send data to backend API
-        const response = await axios.post('http://localhost:8000/api/user/register', registrationData);
+        // Add all form fields
+        Object.keys(formData).forEach(key => {
+          if (key !== 'reTypePassword') { // Exclude reTypePassword from backend
+            formDataToSend.append(key, formData[key]);
+          }
+        });
+        
+        // Add photo file if exists
+        if (photoFile) {
+          formDataToSend.append('photo', photoFile);
+        }
+        
+        // Add photo preview as fallback
+        if (photoPreview) {
+          formDataToSend.append('photoPreview', photoPreview);
+        }
+        
+        console.log('Registration data:', formData);
+        
+        // Send data to backend API with proper headers for FormData
+        const response = await axios.post('http://localhost:8000/api/user/register', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         console.log('Registration successful:', response.data);
         
         alert('Registration successful! You can now login with your credentials.');
         
         // Navigate back to login
         if (onRegister) {
-          onRegister(registrationData);
+          onRegister(formData);
         } else {
           onBackToLogin();
         }

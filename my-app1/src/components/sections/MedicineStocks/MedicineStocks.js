@@ -16,6 +16,7 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
       'Antipyretics': 'AntiP',
       'Antihistamines': 'AntiH',
       'Vitamins': 'Vit',
+      'Antiemetics': 'AntiE',
       'Supplements': 'Sup',
       'Pain Relief': 'Pain',
       'Cold & Flu': 'Cold',
@@ -78,7 +79,7 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
     alert('Medicine updated successfully!');
   };
 
-  const categories = ['All Categories', 'Analgesics', 'Antibiotics', 'Antihistamines', 'Antiseptics', 'Vitamins'];
+  const categories = ['All Categories', 'Analgesics', 'Antibiotics', 'Antiemetics', 'Antihistamines', 'Antiseptics', 'Vitamins'];
 
   // Format date to "Month Date Year" format
   const formatDate = (dateString) => {

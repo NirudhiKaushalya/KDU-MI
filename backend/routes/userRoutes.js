@@ -4,7 +4,7 @@ const { registerUser, loginUser, getUserByEmail, getUserByIndexNo, updateUser, g
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 // Register
-router.post("/register", registerUser);
+router.post("/register", upload.single('photo'), registerUser);
 
 // Login
 router.post("/login", loginUser);

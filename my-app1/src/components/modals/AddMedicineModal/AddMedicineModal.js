@@ -19,6 +19,7 @@ const AddMedicineModal = ({ onClose, onAddMedicine }) => {
     'Antihistamines',
     'Antiseptics',
     'Vitamins',
+    'Antiemetics',
     'Other'
   ];
 

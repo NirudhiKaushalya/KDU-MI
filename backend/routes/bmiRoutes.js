@@ -14,3 +14,7 @@ router.delete("/:userId", bmiController.deleteBmi);
 module.exports = router;
 
 
+
+
+
+

@@ -20,6 +20,28 @@ exports.registerUser = async (req, res) => {
       };
     }
 
+    // Handle photo data - prioritize multer file upload, fallback to frontend base64 data
+    let photoData = null;
+    if (req.file && req.file.mimetype.startsWith('image/')) {
+      // Handle multer file upload for photos
+      photoData = {
+        name: req.file.originalname,
+        size: req.file.size,
+        type: req.file.mimetype,
+        data: req.file.buffer.toString('base64') // Convert buffer to base64
+      };
+      console.log('Photo uploaded via multer:', photoData.name, photoData.size, photoData.type);
+    } else if (photoFile && photoPreview) {
+      // Handle frontend base64 photo data
+      photoData = {
+        name: photoFile.name,
+        size: photoFile.size,
+        type: photoFile.type,
+        data: photoPreview // Store base64 data
+      };
+      console.log('Photo uploaded via frontend:', photoData.name, photoData.size, photoData.type);
+    }
+
     const user = await User.create({
       userName,
       indexNo,
@@ -32,12 +54,7 @@ exports.registerUser = async (req, res) => {
       department,
       additionalNotes: additionalNotes || '',
       photoPreview: photoPreview || null,
-      photoData: photoFile && photoPreview ? {
-        name: photoFile.name,
-        size: photoFile.size,
-        type: photoFile.type,
-        data: photoPreview // Store base64 data
-      } : null,
+      photoData: photoData,
       password: hashedPassword,
       pdfFile
     });
@@ -123,6 +140,9 @@ exports.loginUser = async (req, res) => {
       { expiresIn: "24h" }
     );
 
+    console.log('User login - photoPreview:', user.photoPreview);
+    console.log('User login - photoData:', user.photoData);
+    
     res.status(200).json({
       message: "Login successful",
       token,
