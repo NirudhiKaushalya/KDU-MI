@@ -62,7 +62,7 @@ const AddMedicineModal = ({ onClose, onAddMedicine }) => {
     });
     
     // If the medicine is already low stock, trigger an additional alert with medicineId (only if alerts are enabled)
-    if (isLowStock && isLowStockAlertEnabled()) {
+    if (stockLevel === 'Low Stock' && isLowStockAlertEnabled()) {
       addNotification({
         type: 'warning',
         icon: '⚠️',
