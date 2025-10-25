@@ -77,32 +77,9 @@ const AppContent = () => {
         setPatients(patientsResponse.data);
         console.log('Loaded patients from database:', patientsResponse.data);
 
-        // Load medicines from database
-        const medicinesResponse = await axios.get('http://localhost:8000/api/medicines/');
-        // Recalculate stock levels for all medicines loaded from database
-        const medicinesWithCorrectStockLevel = medicinesResponse.data.map(medicine => ({
-          ...medicine,
-          stockLevel: recalculateStockLevel(medicine)
-        }));
-        setMedicines(medicinesWithCorrectStockLevel);
-        console.log('Loaded medicines from database with recalculated stock levels:', medicinesWithCorrectStockLevel);
-
-        // Update database with correct stock levels (in background, don't wait for it)
-        medicinesWithCorrectStockLevel.forEach(async (medicine) => {
-          const originalMedicine = medicinesResponse.data.find(m => m._id === medicine._id || m.id === medicine.id);
-          if (originalMedicine && originalMedicine.stockLevel !== medicine.stockLevel) {
-            try {
-              const medicineId = medicine._id || medicine.id;
-              await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, {
-                ...medicine,
-                stockLevel: medicine.stockLevel
-              });
-              console.log(`Updated stock level in database for ${medicine.medicineName}: ${medicine.stockLevel}`);
-            } catch (error) {
-              console.log(`Failed to update stock level for ${medicine.medicineName}:`, error);
-            }
-          }
-        });
+        // Start with empty medicines array - only show medicines added during current session
+        setMedicines([]);
+        console.log('Started with empty medicines array - will show only newly added medicines');
       } catch (error) {
         console.log('Database not available, using local state only');
         
@@ -436,9 +413,13 @@ const AppContent = () => {
       const response = await axios.post('http://localhost:8000/api/medicines/', newMedicine);
       console.log('Medicine saved to database:', response.data);
       
-      // Update local state
+      // Update local state - add medicine to current session
       setMedicines(prev => {
-        const updatedMedicines = [...prev, response.data];
+        const newMedicineWithFlag = {
+          ...response.data,
+          recentlyAdded: true // Mark as recently added for current session
+        };
+        const updatedMedicines = [...prev, newMedicineWithFlag];
         
         // Add activity tracking
         addActivity({
@@ -454,6 +435,8 @@ const AppContent = () => {
             expiryDate: newMedicine.expiryDate
           }
         });
+        
+        // Medicine stays visible for the entire session - no timer needed
         
         // Notification is already handled in AddMedicineModal, no need to duplicate here
         
@@ -1041,6 +1024,35 @@ const AppContent = () => {
     setDeletionRequestCount(0);
   };
 
+  const handleRefreshMedicines = async () => {
+    // Clear the table - only show medicines added during current session
+    setMedicines([]);
+    console.log('Refreshed medicines - table cleared, will show only newly added medicines');
+  };
+
+  const handleSearchMedicines = async (searchQuery) => {
+    try {
+      console.log('Searching for:', searchQuery);
+      const response = await axios.get(`http://localhost:8000/api/medicines/search?query=${encodeURIComponent(searchQuery)}`);
+      console.log('Search response:', response.data);
+      const medicinesData = response.data.medicines || [];
+      
+      // Recalculate stock levels for searched medicines
+      const medicinesWithCorrectStockLevel = medicinesData.map(medicine => ({
+        ...medicine,
+        stockLevel: recalculateStockLevel(medicine),
+        recentlyAdded: false // These are from database search, not recently added
+      }));
+      
+      setMedicines(medicinesWithCorrectStockLevel);
+      console.log(`Search results for "${searchQuery}":`, medicinesWithCorrectStockLevel);
+    } catch (error) {
+      console.error('Error searching medicines:', error);
+      console.error('Error details:', error.response?.data);
+      throw error;
+    }
+  };
+
   const renderSection = () => {
     const sectionProps = {
       onAddPatient: () => setShowAdmitPatientModal(true),
@@ -1060,6 +1072,8 @@ const AppContent = () => {
         medicines={medicines} 
         onUpdateMedicine={handleUpdateMedicine}
         onDeleteMedicine={handleDeleteMedicine}
+        onRefreshMedicines={handleRefreshMedicines}
+        onSearchMedicines={handleSearchMedicines}
       />,
       'reports': <Reports medicines={medicines} patients={patients} medicalRecords={medicalRecords} recentReports={recentReports} onAddReport={handleAddReport} onDeleteReport={handleDeleteReport} />,
       'notifications': <Notifications />,

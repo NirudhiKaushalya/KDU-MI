@@ -34,3 +34,4 @@ export const getUserPhotoUrl = (userData) => {
 export const hasUserPhoto = (userData) => {
   return getUserPhotoUrl(userData) !== null;
 };
+

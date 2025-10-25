@@ -23,11 +23,41 @@ exports.createMedicine = async (req, res) => {
         }
     };
 
-// Get all medicines
+// Get recently added medicines (last 7 days by default)
 exports.getMedicines = async (req,res) => {
     try{
-        const medicines = await Medicine.find();
-        res.json(medicines);
+        // Get days parameter from query, default to 7 days
+        const days = parseInt(req.query.days) || 7;
+        
+        // Calculate date threshold
+        const dateThreshold = new Date();
+        dateThreshold.setDate(dateThreshold.getDate() - days);
+        
+        // Find medicines created within the specified time period
+        const medicines = await Medicine.find({
+            createdAt: { $gte: dateThreshold }
+        }).sort({ createdAt: -1 }); // Sort by newest first
+        
+        res.json({
+            medicines: medicines,
+            message: `Showing medicines added in the last ${days} days`,
+            totalCount: medicines.length,
+            dateThreshold: dateThreshold
+        });
+    } catch (error) {
+        res.status(500).json ({message: error.message});
+    }
+};
+
+// Get all medicines (for admin purposes or when you need to see everything)
+exports.getAllMedicines = async (req,res) => {
+    try{
+        const medicines = await Medicine.find().sort({ createdAt: -1 });
+        res.json({
+            medicines: medicines,
+            message: "All medicines retrieved",
+            totalCount: medicines.length
+        });
     } catch (error) {
         res.status(500).json ({message: error.message});
     }
@@ -123,6 +153,46 @@ exports.getMedicineByName = async (req, res) => {
         }
         res.json(medicine);
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Search medicines in database
+exports.searchMedicines = async (req, res) => {
+    try {
+        console.log('Search endpoint called with query:', req.query);
+        const { query } = req.query;
+        
+        if (!query || query.trim() === '') {
+            console.log('Empty query provided');
+            return res.json({
+                medicines: [],
+                message: "Please provide a search query",
+                totalCount: 0
+            });
+        }
+
+        console.log('Searching for:', query);
+        // Search in medicine name, brand, and category
+        const searchRegex = new RegExp(query, 'i'); // Case insensitive search
+        
+        const medicines = await Medicine.find({
+            $or: [
+                { medicineName: searchRegex },
+                { brand: searchRegex },
+                { category: searchRegex }
+            ]
+        }).sort({ createdAt: -1 });
+
+        console.log('Found medicines:', medicines.length);
+        res.json({
+            medicines: medicines,
+            message: `Found ${medicines.length} medicines matching "${query}"`,
+            totalCount: medicines.length,
+            searchQuery: query
+        });
+    } catch (error) {
+        console.error('Search error:', error);
         res.status(500).json({ message: error.message });
     }
 };

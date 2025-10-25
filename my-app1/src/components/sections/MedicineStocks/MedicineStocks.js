@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import styles from './MedicineStocks.module.scss';
 import EditMedicineModal from '../../modals/EditMedicineModal/EditMedicineModal';
 
-const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, medicines = [] }) => {
+const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, medicines = [], onRefreshMedicines, onSearchMedicines }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All Categories');
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Generate medicine ID based on category
   const generateMedicineId = (category, index) => {
@@ -79,6 +80,28 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
     alert('Medicine updated successfully!');
   };
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) {
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      await onSearchMedicines(searchTerm.trim());
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Error searching medicines. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    onRefreshMedicines(); // Clear search results and go back to session-based view
+  };
+
   const categories = ['All Categories', 'Analgesics', 'Antibiotics', 'Antiemetics', 'Antihistamines', 'Antiseptics', 'Vitamins'];
 
   // Format date to "Month Date Year" format
@@ -104,31 +127,47 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
     <div className={styles.medicineStocks}>
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>Medicine Inventory</h3>
-          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onAddMedicine}>
-            <i className="fas fa-plus"></i> Add New Medicine
-          </button>
+          <h3 className={styles.cardTitle}>Recently Added</h3>
+          <div className={styles.headerButtons}>
+            {onRefreshMedicines && (
+              <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={onRefreshMedicines} title="Refresh Medicine List">
+                <i className="fas fa-sync-alt"></i> Refresh
+              </button>
+            )}
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onAddMedicine}>
+              <i className="fas fa-plus"></i> Add New Medicine
+            </button>
+          </div>
         </div>
         
         <div className={`${styles.flexBetween} ${styles.mb20}`}>
-          <div className={styles.searchBar}>
+          <form className={styles.searchBar} onSubmit={handleSearch}>
             <i className="fas fa-search"></i>
             <input 
               type="text" 
-              placeholder="Search by ID, name, category, or brand..." 
+              placeholder="Search by name, brand, or category..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
               <button 
+                type="button"
                 className={styles.clearSearch}
-                onClick={() => setSearchTerm('')}
+                onClick={handleClearSearch}
                 title="Clear search"
               >
                 <i className="fas fa-times"></i>
               </button>
             )}
-          </div>
+            <button 
+              type="submit" 
+              className={styles.searchButton}
+              disabled={isSearching || !searchTerm.trim()}
+              title="Search medicines"
+            >
+              {isSearching ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>}
+            </button>
+          </form>
           <select 
             className={styles.formControl} 
             value={filterCategory}
@@ -148,6 +187,7 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
                 <tr>
                   <th>MEDICINE ID</th>
                   <th>MEDICINE NAME</th>
+                  <th>QUANTITY</th>
                   <th>STOCK LEVEL</th>
                   <th>EXPIRY DATE</th>
                   <th>ACTION PANEL</th>
@@ -168,6 +208,9 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
                         <div className={styles.name}>{medicine.medicineName}</div>
                         <div className={styles.brand}>{medicine.brand}</div>
                       </div>
+                    </td>
+                    <td className={styles.quantity}>
+                      {medicine.quantity} units
                     </td>
                     <td>
                       <span className={`${styles.statusBadge} ${getStockLevelClass(medicine.stockLevel)}`}>
@@ -207,8 +250,8 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
         ) : (
           <div className="empty-state">
             <i className="fas fa-pills"></i>
-            <h3>No medicine records found</h3>
-            <p>Try changing your search or filter criteria</p>
+            <h3>No medicines added yet</h3>
+            <p>Medicines added during this session will appear here</p>
             <button className={`${styles.btn} ${styles.btnPrimary} mt-20`} onClick={onAddMedicine}>
               <i className="fas fa-plus"></i> Add Medicine
             </button>

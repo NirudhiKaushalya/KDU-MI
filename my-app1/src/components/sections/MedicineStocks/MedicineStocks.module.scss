@@ -29,6 +29,12 @@
   }
 }
 
+.headerButtons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
 .cardTitle {
   font-size: 18px;
   font-weight: 600;
@@ -49,6 +55,28 @@
 
     &:hover {
       background-color: $primary-dark;
+    }
+  }
+
+  &.btnSecondary {
+    background-color: #f1f5f9;
+    color: $text-primary;
+    border: 1px solid $border-light;
+
+    &:hover {
+      background-color: #e2e8f0;
+      border-color: $primary;
+    }
+
+    .dark-mode & {
+      background-color: #374151;
+      color: #e6e6e6;
+      border-color: $border-dark;
+
+      &:hover {
+        background-color: #4b5563;
+        border-color: $primary-light;
+      }
     }
   }
 
@@ -125,6 +153,34 @@
       color: #9ca3af;
     }
   }
+
+  .searchButton {
+    position: absolute;
+    right: 45px;
+    background: $primary;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+
+    &:hover:not(:disabled) {
+      background: $primary-dark;
+    }
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .dark-mode & {
+      &:disabled {
+        background: #666;
+      }
+    }
+  }
 }
 
 .formControl {
@@ -153,6 +209,75 @@
   .dark-mode &:focus {
     border-color: $primary-light;
     box-shadow: 0 0 0 3px rgba(58, 117, 217, 0.2), 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Removed card-related styles
+
+.medicineId {
+  font-weight: 600;
+  color: $primary;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.expiredBadge {
+  display: inline-block;
+  background-color: $danger;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.statusNormal {
+  background-color: #dcfce7;
+  color: #166534;
+
+  .dark-mode & {
+    background-color: #166534;
+    color: #dcfce7;
+  }
+}
+
+.statusWarning {
+  background-color: #fef3c7;
+  color: #92400e;
+
+  .dark-mode & {
+    background-color: #92400e;
+    color: #fef3c7;
+  }
+}
+
+.statusDanger {
+  background-color: #fee2e2;
+  color: #991b1b;
+
+  .dark-mode & {
+    background-color: #991b1b;
+    color: #fee2e2;
+  }
+}
+
+.statusNew {
+  background-color: #dbeafe;
+  color: #1e40af;
+
+  .dark-mode & {
+    background-color: #1e40af;
+    color: #dbeafe;
   }
 }
 
@@ -213,12 +338,6 @@
   }
 }
 
-.medicineId {
-  font-weight: 600;
-  color: $primary;
-  font-family: 'Courier New', monospace;
-}
-
 .medicineName {
   .medicineInfo {
     .name {
@@ -237,59 +356,21 @@
   }
 }
 
+.quantity {
+  font-weight: 600;
+  color: $text-primary;
+  text-align: center;
+
+  .dark-mode & {
+    color: #e6e6e6;
+  }
+}
+
 .expiryDate {
   position: relative;
-  
-  .expiredBadge {
-    display: inline-block;
-    background-color: $danger;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    margin-left: 8px;
-    font-weight: 600;
-  }
 }
 
-.statusBadge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.statusNormal {
-  background-color: #dcfce7;
-  color: #166534;
-
-  .dark-mode & {
-    background-color: #166534;
-    color: #dcfce7;
-  }
-}
-
-.statusWarning {
-  background-color: #fef3c7;
-  color: #92400e;
-
-  .dark-mode & {
-    background-color: #92400e;
-    color: #fef3c7;
-  }
-}
-
-.statusDanger {
-  background-color: #fee2e2;
-  color: #991b1b;
-
-  .dark-mode & {
-    background-color: #991b1b;
-    color: #fee2e2;
-  }
-}
+// Removed recentlyAdded styles
 
 .actionButtons {
   display: flex;
