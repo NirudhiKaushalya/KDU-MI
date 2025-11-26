@@ -29,17 +29,23 @@ const deletionRequestSchema = new mongoose.Schema(
     },
     status: { 
       type: String, 
-      enum: ['pending', 'approved', 'rejected'], 
+      enum: ['pending', 'user_approved', 'user_rejected', 'admin_confirmed', 'admin_rejected'], 
       default: 'pending' 
     },
     requestedAt: { 
       type: Date, 
       default: Date.now 
     },
-    respondedAt: { 
+    userRespondedAt: { 
+      type: Date 
+    },
+    adminConfirmedAt: { 
       type: Date 
     },
     patientResponse: { 
+      type: String 
+    },
+    adminFinalResponse: { 
       type: String 
     },
     dismissedByPatient: { 

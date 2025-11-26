@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import styles from './Header.module.scss';
 import { useNotifications } from '../../../contexts/NotificationContext';
 
@@ -8,6 +9,7 @@ const Header = ({ activeSection, onSectionChange, onLogout, patients = [], medic
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
   const getSectionTitle = () => {
@@ -55,77 +57,91 @@ const Header = ({ activeSection, onSectionChange, onLogout, patients = [], medic
     setShowDropdown(false);
   };
 
-  // Search functionality
-  const handleSearch = (term) => {
-    setSearchTerm(term);
-    
-    if (term.trim() === '') {
+  // Search functionality - searches from database
+  const searchFromDatabase = useCallback(async (term) => {
+    if (term.trim().length < 2) {
       setSearchResults([]);
       setShowSearchResults(false);
       return;
     }
 
+    setIsSearching(true);
     const results = [];
-    const searchLower = term.toLowerCase();
 
-    // Search patients
-    if (patients && Array.isArray(patients)) {
-      patients.forEach(patient => {
-        if (
-          (patient.name && patient.name.toLowerCase().includes(searchLower)) ||
-          (patient.id && patient.id.toLowerCase().includes(searchLower)) ||
-          (patient.indexNo && patient.indexNo.toLowerCase().includes(searchLower)) ||
-          (patient.condition && patient.condition.toLowerCase().includes(searchLower)) ||
-          (patient.role && patient.role.toLowerCase().includes(searchLower))
-        ) {
+    try {
+      // Search patients from database
+      const patientResponse = await axios.get(`http://localhost:8000/api/patient/search?query=${encodeURIComponent(term)}`);
+      const patientsData = patientResponse.data.patients || [];
+      
+      patientsData.forEach(patient => {
         results.push({
           type: 'patient',
-          id: patient.id,
-          title: patient.name || 'Unknown Patient',
-          subtitle: `Patient ID: ${patient.id || 'N/A'} | ${patient.condition || 'N/A'}`,
+          id: patient._id || patient.id,
+          title: patient.indexNo || 'Unknown Patient',
+          subtitle: `${patient.medicalCondition || patient.condition || 'N/A'} | ${patient.consultedDate || 'N/A'}`,
           data: patient
         });
-      }
-    });
-  }
+      });
+    } catch (error) {
+      console.error('Error searching patients:', error);
+    }
 
-    // Search medicines
-    if (medicines && Array.isArray(medicines)) {
-      medicines.forEach(medicine => {
-        if (
-          (medicine.medicineName && medicine.medicineName.toLowerCase().includes(searchLower)) ||
-          (medicine.id && medicine.id.toLowerCase().includes(searchLower)) ||
-          (medicine.category && medicine.category.toLowerCase().includes(searchLower)) ||
-          (medicine.brand && medicine.brand.toLowerCase().includes(searchLower))
-        ) {
+    try {
+      // Search medicines from database
+      const medicineResponse = await axios.get(`http://localhost:8000/api/medicines/search?query=${encodeURIComponent(term)}`);
+      const medicinesData = medicineResponse.data.medicines || [];
+      
+      medicinesData.forEach(medicine => {
         results.push({
           type: 'medicine',
-          id: medicine.id,
+          id: medicine._id || medicine.id,
           title: medicine.medicineName || 'Unknown Medicine',
-          subtitle: `${medicine.category || 'N/A'} | Stock: ${medicine.stockLevel || 'N/A'}`,
+          subtitle: `${medicine.category || 'N/A'} | Stock: ${medicine.quantity || 0} units`,
           data: medicine
         });
-      }
-    });
-  }
+      });
+    } catch (error) {
+      console.error('Error searching medicines:', error);
+    }
 
     setSearchResults(results);
-    setShowSearchResults(results.length > 0);
+    setShowSearchResults(true);
+    setIsSearching(false);
+  }, []);
+
+  // Debounce search
+  useEffect(() => {
+    if (searchTerm.trim().length >= 2) {
+      const timeoutId = setTimeout(() => {
+        searchFromDatabase(searchTerm);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [searchTerm, searchFromDatabase]);
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
   };
 
   
-  const handleSearchItemClick = (item) => {
+  const handleSearchItemClick = async (item) => {
+    // First, call onSearch to populate the data
+    if (onSearch) {
+      await onSearch(item);
+    }
+    
+    // Then navigate to the appropriate section
     if (item.type === 'patient') {
       onSectionChange('patient-management');
     } else if (item.type === 'medicine') {
       onSectionChange('medicine-stocks');
     }
     
-    if (onSearch) {
-      onSearch(item);
-    }
-    
     setSearchTerm('');
+    setSearchResults([]);
     setShowSearchResults(false);
   };
 
@@ -157,19 +173,20 @@ const Header = ({ activeSection, onSectionChange, onLogout, patients = [], medic
         {showSearchBar && (
           <div className={styles.searchContainer} ref={searchRef}>
             <div className={styles.searchBar}>
-              <i className="fas fa-search"></i>
+              <i className={isSearching ? "fas fa-spinner fa-spin" : "fas fa-search"}></i>
               <input 
                 type="text" 
                 placeholder="Search patients, medicines..." 
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => searchTerm && setShowSearchResults(true)}
+                onFocus={() => searchTerm.length >= 2 && searchResults.length > 0 && setShowSearchResults(true)}
               />
               {searchTerm && (
                 <button 
                   className={styles.clearSearch}
                   onClick={() => {
                     setSearchTerm('');
+                    setSearchResults([]);
                     setShowSearchResults(false);
                   }}
                   title="Clear search"
@@ -202,11 +219,20 @@ const Header = ({ activeSection, onSectionChange, onLogout, patients = [], medic
               </div>
             )}
             
-            {showSearchResults && searchResults.length === 0 && searchTerm && (
+            {showSearchResults && searchResults.length === 0 && searchTerm.length >= 2 && !isSearching && (
               <div className={styles.searchResults}>
                 <div className={styles.noResults}>
                   <i className="fas fa-search"></i>
                   <span>No results found for "{searchTerm}"</span>
+                </div>
+              </div>
+            )}
+
+            {isSearching && searchTerm.length >= 2 && (
+              <div className={styles.searchResults}>
+                <div className={styles.noResults}>
+                  <i className="fas fa-spinner fa-spin"></i>
+                  <span>Searching...</span>
                 </div>
               </div>
             )}

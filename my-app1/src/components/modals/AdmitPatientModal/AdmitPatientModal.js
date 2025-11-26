@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import styles from './AdmitPatientModal.module.scss';
 
@@ -16,6 +16,9 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
 
   const [medicineSearch, setMedicineSearch] = useState('');
   const [userValidation, setUserValidation] = useState({ status: null, message: '' });
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const medicalConditions = [
     'Select a condition',
@@ -36,8 +39,59 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
     'Treatment'
   ];
 
-  // Get available medicines from inventory
-  const availableMedicines = medicines.map(medicine => medicine.medicineName);
+  // Search medicines from database
+  const searchMedicinesFromDB = useCallback(async (query) => {
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.get(`http://localhost:8000/api/medicines/search?query=${encodeURIComponent(query)}`);
+      const medicinesData = response.data.medicines || [];
+      
+      // Filter out medicines that are already prescribed and have stock > 0
+      const filteredMedicines = medicinesData
+        .filter(med => {
+          const alreadyPrescribed = formData.prescribedMedicines.some(p => p.name === med.medicineName);
+          const hasStock = parseInt(med.quantity) > 0;
+          return !alreadyPrescribed && hasStock;
+        })
+        .map(med => ({
+          id: med._id || med.id,
+          name: med.medicineName,
+          brand: med.brand,
+          category: med.category,
+          quantity: med.quantity,
+          stockLevel: med.stockLevel
+        }));
+      
+      setSearchResults(filteredMedicines);
+      setShowDropdown(filteredMedicines.length > 0);
+    } catch (error) {
+      console.error('Error searching medicines:', error);
+      setSearchResults([]);
+      setShowDropdown(false);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [formData.prescribedMedicines]);
+
+  // Debounce medicine search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (medicineSearch.trim()) {
+        searchMedicinesFromDB(medicineSearch);
+      } else {
+        setSearchResults([]);
+        setShowDropdown(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [medicineSearch, searchMedicinesFromDB]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -71,21 +125,44 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
 
   const handleMedicineQuantityChange = (index, quantity) => {
     const updatedMedicines = [...formData.prescribedMedicines];
-    updatedMedicines[index].quantity = parseInt(quantity) || 0;
+    let newQuantity = parseInt(quantity) || 0;
+    
+    // Validate against max quantity (available stock)
+    const maxQty = updatedMedicines[index].maxQuantity || 999;
+    if (newQuantity > maxQty) {
+      newQuantity = maxQty;
+      alert(`Maximum available stock is ${maxQty} units.`);
+    }
+    if (newQuantity < 1) {
+      newQuantity = 1;
+    }
+    
+    updatedMedicines[index].quantity = newQuantity;
     setFormData(prev => ({
       ...prev,
       prescribedMedicines: updatedMedicines
     }));
   };
 
-  const handleAddMedicine = (medicineName) => {
+  const handleAddMedicine = (medicine) => {
+    const medicineName = typeof medicine === 'string' ? medicine : medicine.name;
+    const maxQuantity = typeof medicine === 'object' ? parseInt(medicine.quantity) : 999;
+    
     if (medicineName && !formData.prescribedMedicines.find(m => m.name === medicineName)) {
       setFormData(prev => ({
         ...prev,
-        prescribedMedicines: [...prev.prescribedMedicines, { name: medicineName, quantity: 1 }]
+        prescribedMedicines: [...prev.prescribedMedicines, { 
+          name: medicineName, 
+          quantity: 1,
+          maxQuantity: maxQuantity,
+          brand: medicine.brand || '',
+          category: medicine.category || ''
+        }]
       }));
     }
     setMedicineSearch('');
+    setSearchResults([]);
+    setShowDropdown(false);
   };
 
   const handleRemoveMedicine = (index) => {
@@ -178,12 +255,8 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
     onClose();
   };
 
-  const filteredMedicines = availableMedicines.filter(medicine =>
-    medicine.toLowerCase().includes(medicineSearch.toLowerCase())
-  );
-
   // Reset form and validation when modal is closed
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen) {
       setFormData({
         indexNo: '',
@@ -197,6 +270,8 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
       });
       setUserValidation({ status: null, message: '' });
       setMedicineSearch('');
+      setSearchResults([]);
+      setShowDropdown(false);
     }
   }, [isOpen]);
 
@@ -345,20 +420,36 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
                   placeholder="Search Medicines..."
                   value={medicineSearch}
                   onChange={(e) => setMedicineSearch(e.target.value)}
+                  onFocus={() => medicineSearch.length >= 2 && searchResults.length > 0 && setShowDropdown(true)}
                 />
+                {isSearching && <i className="fas fa-spinner fa-spin" style={{ marginLeft: '8px', color: '#6b7280' }}></i>}
               </div>
-              {medicineSearch && (
+              {showDropdown && searchResults.length > 0 && (
                 <div className={styles.medicineDropdown}>
-                  {filteredMedicines.map(medicine => (
+                  {searchResults.map(medicine => (
                     <button
-                      key={medicine}
+                      key={medicine.id}
                       type="button"
                       className={styles.medicineOption}
                       onClick={() => handleAddMedicine(medicine)}
                     >
-                      {medicine}
+                      <div className={styles.medicineOptionMain}>
+                        <span className={styles.medicineName}>{medicine.name}</span>
+                        <span className={styles.medicineBrand}>{medicine.brand}</span>
+                      </div>
+                      <div className={styles.medicineOptionMeta}>
+                        <span className={styles.medicineCategory}>{medicine.category}</span>
+                        <span className={`${styles.medicineStock} ${parseInt(medicine.quantity) <= 10 ? styles.lowStock : ''}`}>
+                          Stock: {medicine.quantity}
+                        </span>
+                      </div>
                     </button>
                   ))}
+                </div>
+              )}
+              {medicineSearch.length >= 2 && !isSearching && searchResults.length === 0 && (
+                <div className={styles.medicineDropdown}>
+                  <div className={styles.noResults}>No medicines found</div>
                 </div>
               )}
             </div>
@@ -376,15 +467,26 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
                   <tbody>
                     {formData.prescribedMedicines.map((medicine, index) => (
                       <tr key={index}>
-                        <td>{medicine.name}</td>
                         <td>
-                          <input
-                            type="number"
-                            min="1"
-                            value={medicine.quantity}
-                            onChange={(e) => handleMedicineQuantityChange(index, e.target.value)}
-                            className={styles.quantityInput}
-                          />
+                          <div className={styles.medicineNameCell}>
+                            <span className={styles.medicineCellName}>{medicine.name}</span>
+                            {medicine.brand && <span className={styles.medicineCellBrand}>{medicine.brand}</span>}
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.quantityWrapper}>
+                            <input
+                              type="number"
+                              min="1"
+                              max={medicine.maxQuantity || 999}
+                              value={medicine.quantity}
+                              onChange={(e) => handleMedicineQuantityChange(index, e.target.value)}
+                              className={styles.quantityInput}
+                            />
+                            {medicine.maxQuantity && (
+                              <span className={styles.maxQuantity}>/ {medicine.maxQuantity}</span>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <button

@@ -12,6 +12,7 @@ import Dashboard from './components/sections/Dashboard/Dashboard';
 import UserDashboard from './components/sections/UserDashboard/UserDashboard';
 import UserNotifications from './components/sections/UserNotifications/UserNotifications';
 import DeletionRequests from './components/sections/DeletionRequests/DeletionRequests';
+import DeletionApprovals from './components/sections/DeletionApprovals/DeletionApprovals';
 import PersonalInfo from './components/sections/PersonalInfo/PersonalInfo';
 import MedicalHistory from './components/sections/MedicalHistory/MedicalHistory';
 import PatientManagement from './components/sections/PatientManagement/PatientManagement';
@@ -663,81 +664,93 @@ const AppContent = () => {
       const prescribedMedicines = patientData.prescribedMedicines || [];
       
       if (prescribedMedicines.length > 0) {
-        // Check if sufficient stock is available for all prescribed medicines
-        const stockValidation = prescribedMedicines.every(prescribed => {
-          const medicine = medicines.find(med => med.medicineName === prescribed.name);
-          if (!medicine) {
-            alert(`Medicine "${prescribed.name}" not found in inventory.`);
-            return false;
-          }
-          const availableStock = parseInt(medicine.quantity) || 0;
-          const requestedQuantity = parseInt(prescribed.quantity) || 0;
-          
-          if (availableStock < requestedQuantity) {
-            alert(`Insufficient stock for "${prescribed.name}". Available: ${availableStock}, Requested: ${requestedQuantity}`);
-            return false;
-          }
-          return true;
-        });
-
-        if (!stockValidation) {
-          return; // Stop processing if stock validation fails
-        }
-
-        // Deduct quantities from medicine stock
-        setMedicines(prev => {
-          const updatedMedicines = prev.map(medicine => {
-            const prescribed = prescribedMedicines.find(p => p.name === medicine.medicineName);
-            if (prescribed) {
-              const currentStock = parseInt(medicine.quantity) || 0;
-              const issuedQuantity = parseInt(prescribed.quantity) || 0;
-              const newStock = currentStock - issuedQuantity;
-              
-              return {
-                ...medicine,
-                quantity: newStock.toString(),
-                stockLevel: newStock === 0 ? 'Out of Stock' : (newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock')
-              };
+        // Fetch medicines from database for validation and update
+        const medicineValidationPromises = prescribedMedicines.map(async (prescribed) => {
+          try {
+            // Search for the medicine in database
+            const searchResponse = await axios.get(`http://localhost:8000/api/medicines/search?query=${encodeURIComponent(prescribed.name)}`);
+            const foundMedicines = searchResponse.data.medicines || [];
+            
+            // Find exact match
+            const medicine = foundMedicines.find(med => med.medicineName.toLowerCase() === prescribed.name.toLowerCase());
+            
+            if (!medicine) {
+              return { valid: false, error: `Medicine "${prescribed.name}" not found in inventory.` };
             }
-            return medicine;
-          });
-          
-          // Check for stock alerts after updating quantities (only for admin users)
-          if (userType === 'admin') {
-            checkStockAlerts(updatedMedicines);
+            
+            const availableStock = parseInt(medicine.quantity) || 0;
+            const requestedQuantity = parseInt(prescribed.quantity) || 0;
+            
+            if (availableStock < requestedQuantity) {
+              return { valid: false, error: `Insufficient stock for "${prescribed.name}". Available: ${availableStock}, Requested: ${requestedQuantity}` };
+            }
+            
+            return { valid: true, medicine, requestedQuantity };
+          } catch (error) {
+            console.error(`Error validating medicine ${prescribed.name}:`, error);
+            return { valid: false, error: `Error checking stock for "${prescribed.name}".` };
           }
-          
-          return updatedMedicines;
         });
+        
+        const validationResults = await Promise.all(medicineValidationPromises);
+        
+        // Check for any validation failures
+        const failedValidation = validationResults.find(result => !result.valid);
+        if (failedValidation) {
+          alert(failedValidation.error);
+          return;
+        }
 
         // Update medicine quantities in database
         try {
-          const medicineUpdatePromises = prescribedMedicines.map(async (prescribed) => {
-            const medicine = medicines.find(med => med.medicineName === prescribed.name);
-            if (medicine) {
+          const medicineUpdatePromises = validationResults.map(async (result) => {
+            if (result.valid && result.medicine) {
+              const medicine = result.medicine;
               const currentStock = parseInt(medicine.quantity) || 0;
-              const issuedQuantity = parseInt(prescribed.quantity) || 0;
+              const issuedQuantity = result.requestedQuantity;
               const newStock = currentStock - issuedQuantity;
+              const threshold = parseInt(medicine.lowStockThreshold) || 10;
               
               const updatedMedicineData = {
                 ...medicine,
                 quantity: newStock.toString(),
-                stockLevel: newStock === 0 ? 'Out of Stock' : (newStock <= parseInt(medicine.lowStockThreshold) ? 'Low Stock' : 'In Stock')
+                stockLevel: newStock === 0 ? 'Out of Stock' : (newStock <= threshold ? 'Low Stock' : 'In Stock')
               };
               
-              // Use _id if available, otherwise use id
               const medicineId = medicine._id || medicine.id;
               const response = await axios.put(`http://localhost:8000/api/medicines/${medicineId}`, updatedMedicineData);
-              console.log(`Updated medicine ${prescribed.name} in database:`, response.data);
+              console.log(`Updated medicine ${medicine.medicineName} in database:`, response.data);
+              
+              // Update local state if medicine exists there
+              setMedicines(prev => prev.map(med => {
+                if (med.medicineName === medicine.medicineName) {
+                  return {
+                    ...med,
+                    quantity: newStock.toString(),
+                    stockLevel: newStock === 0 ? 'Out of Stock' : (newStock <= threshold ? 'Low Stock' : 'In Stock')
+                  };
+                }
+                return med;
+              }));
+              
               return response.data;
             }
           });
           
           await Promise.all(medicineUpdatePromises);
           console.log('All medicine quantities updated in database successfully');
+          
+          // Check for stock alerts after updating quantities (only for admin users)
+          if (userType === 'admin') {
+            // Fetch updated medicines to check alerts
+            const allMedsResponse = await axios.get('http://localhost:8000/api/medicines/all');
+            const allMeds = allMedsResponse.data.medicines || [];
+            checkStockAlerts(allMeds);
+          }
         } catch (error) {
           console.error('Error updating medicine quantities in database:', error);
-          alert(`Warning: Medicine quantities were updated in the display but failed to save to database. Please refresh and try again.`);
+          alert(`Warning: Medicine stock update failed. Please try again.`);
+          return;
         }
 
         // Trigger notification for medicine issued
@@ -1150,6 +1163,40 @@ const AppContent = () => {
     }
   };
 
+  const handleFilterByCategory = async (category) => {
+    try {
+      console.log('Filtering by category:', category);
+      const response = await axios.get(`http://localhost:8000/api/medicines/category/${encodeURIComponent(category)}`);
+      console.log('Category filter response:', response.data);
+      const medicinesData = response.data.medicines || [];
+      
+      // Recalculate stock levels for filtered medicines
+      const medicinesWithCorrectStockLevel = medicinesData.map(medicine => ({
+        ...medicine,
+        stockLevel: recalculateStockLevel(medicine),
+        recentlyAdded: false // These are from database filter, not recently added
+      }));
+      
+      setMedicines(medicinesWithCorrectStockLevel);
+      console.log(`Medicines in category "${category}":`, medicinesWithCorrectStockLevel);
+    } catch (error) {
+      console.error('Error filtering by category:', error);
+      console.error('Error details:', error.response?.data || error.message);
+
+      const serverMessage = error.response?.data?.message;
+      if (serverMessage) {
+        alert(`Filter failed: ${serverMessage}`);
+      } else if (error.message && error.message.toLowerCase().includes('network')) {
+        alert('Unable to reach the backend server. Category filter not available in local-only mode.');
+      } else {
+        alert('An error occurred while filtering medicines by category.');
+      }
+
+      setMedicines([]);
+      return;
+    }
+  };
+
   const renderSection = () => {
     const sectionProps = {
       onAddPatient: () => setShowAdmitPatientModal(true),
@@ -1174,8 +1221,10 @@ const AppContent = () => {
         onDeleteMedicine={handleDeleteMedicine}
         onRefreshMedicines={handleRefreshMedicines}
         onSearchMedicines={handleSearchMedicines}
+        onFilterByCategory={handleFilterByCategory}
       />,
       'reports': <Reports medicines={medicines} patients={patients} medicalRecords={medicalRecords} recentReports={recentReports} onAddReport={handleAddReport} onDeleteReport={handleDeleteReport} />,
+      'deletion-approvals': <DeletionApprovals onPatientDeleted={handlePatientDeleted} />,
       'notifications': <Notifications />,
       'settings': <Settings key={JSON.stringify(settings)} />
     };
@@ -1218,8 +1267,41 @@ const AppContent = () => {
                 onLogout={handleLogout}
                 patients={patients}
                 medicines={medicines}
-                onSearch={(searchResult) => {
-                  // Handle search result selection if needed
+                onSearch={async (searchResult) => {
+                  // Populate the relevant section with searched data
+                  if (searchResult.type === 'patient') {
+                    // Search for this patient and display in Patient Management
+                    try {
+                      const response = await axios.get(`http://localhost:8000/api/patient/search?query=${encodeURIComponent(searchResult.title)}`);
+                      const patientsData = response.data.patients || [];
+                      setPatients(patientsData);
+                      console.log('Populated patients from header search:', patientsData);
+                    } catch (error) {
+                      console.error('Error fetching patient from search:', error);
+                      // Fallback: use the data from search result
+                      if (searchResult.data) {
+                        setPatients([searchResult.data]);
+                      }
+                    }
+                  } else if (searchResult.type === 'medicine') {
+                    // Search for this medicine and display in Medicine Stocks
+                    try {
+                      const response = await axios.get(`http://localhost:8000/api/medicines/search?query=${encodeURIComponent(searchResult.title)}`);
+                      const medicinesData = response.data.medicines || [];
+                      const medicinesWithStockLevel = medicinesData.map(med => ({
+                        ...med,
+                        stockLevel: recalculateStockLevel(med)
+                      }));
+                      setMedicines(medicinesWithStockLevel);
+                      console.log('Populated medicines from header search:', medicinesWithStockLevel);
+                    } catch (error) {
+                      console.error('Error fetching medicine from search:', error);
+                      // Fallback: use the data from search result
+                      if (searchResult.data) {
+                        setMedicines([{...searchResult.data, stockLevel: recalculateStockLevel(searchResult.data)}]);
+                      }
+                    }
+                  }
                 }}
               />
               

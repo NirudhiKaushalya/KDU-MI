@@ -122,7 +122,7 @@ exports.getAllDeletionRequests = async (req, res) => {
   }
 };
 
-// Respond to a deletion request (approve/reject)
+// User responds to a deletion request (approve/reject) - Step 1
 exports.respondToDeletionRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -137,54 +137,152 @@ exports.respondToDeletionRequest = async (req, res) => {
       return res.status(400).json({ message: "This request has already been responded to" });
     }
 
-    // Update the request status
-    deletionRequest.status = response;
-    deletionRequest.respondedAt = new Date();
+    // Update the request status based on user response
+    // If user approves, it goes to 'user_approved' for admin final confirmation
+    // If user rejects, it goes to 'user_rejected' and process ends
+    deletionRequest.status = response === 'approved' ? 'user_approved' : 'user_rejected';
+    deletionRequest.userRespondedAt = new Date();
     deletionRequest.patientResponse = patientResponse || '';
 
     await deletionRequest.save();
 
-    // If approved, delete both the medical record and the corresponding patient record
+    const Notification = require("../models/notification");
+
     if (response === 'approved') {
+      // User approved - send notification to admin for final confirmation
+      const adminNotification = new Notification({
+        notificationID: Date.now(),
+        patientID: 'admin',
+        message: `Patient ${deletionRequest.patientIndexNo} has approved the deletion request. Awaiting your final confirmation to delete the record.`,
+        type: 'deletion_user_approved',
+        category: 'admin'
+      });
+      await adminNotification.save();
+
+      // Also notify the user that their approval is pending admin confirmation
+      const userNotification = new Notification({
+        notificationID: Date.now() + 1,
+        patientID: deletionRequest.patientIndexNo,
+        message: `Your approval for the deletion request has been sent to the admin for final confirmation.`,
+        type: 'deletion_pending_admin',
+        category: 'patient'
+      });
+      await userNotification.save();
+
+      res.status(200).json({
+        message: "Your approval has been sent to admin for final confirmation",
+        request: deletionRequest,
+        awaitingAdminConfirmation: true
+      });
+    } else {
+      // User rejected - notify admin and end process
+      const adminNotification = new Notification({
+        notificationID: Date.now(),
+        patientID: 'admin',
+        message: `Patient ${deletionRequest.patientIndexNo} has rejected the deletion request.`,
+        type: 'deletion_user_rejected',
+        category: 'admin'
+      });
+      await adminNotification.save();
+
+      res.status(200).json({
+        message: "Deletion request rejected successfully",
+        request: deletionRequest
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Admin confirms or rejects the user-approved deletion request - Step 2
+exports.adminConfirmDeletion = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { response, adminResponse } = req.body; // response: 'confirm' or 'reject'
+
+    const deletionRequest = await DeletionRequest.findById(requestId);
+    if (!deletionRequest) {
+      return res.status(404).json({ message: "Deletion request not found" });
+    }
+
+    if (deletionRequest.status !== 'user_approved') {
+      return res.status(400).json({ message: "This request is not awaiting admin confirmation" });
+    }
+
+    const Notification = require("../models/notification");
+
+    if (response === 'confirm') {
+      // Admin confirms - delete the records
+      deletionRequest.status = 'admin_confirmed';
+      deletionRequest.adminConfirmedAt = new Date();
+      deletionRequest.adminFinalResponse = adminResponse || 'Deletion confirmed';
+
+      await deletionRequest.save();
+
       // Delete the medical record
       await MedicalRecord.findByIdAndDelete(deletionRequest.medicalRecordId);
       
       // Delete the corresponding patient record from the patient collection
-      // We need to find the patient record that matches the deletion request
       const patientRecord = await Patient.findOne({ indexNo: deletionRequest.patientIndexNo });
       if (patientRecord) {
         await Patient.findByIdAndDelete(patientRecord._id);
         console.log(`Patient record deleted for index: ${deletionRequest.patientIndexNo}`);
       }
       
-      // Create notification for approved deletion request
-      const Notification = require("../models/notification");
-      const notification = new Notification({
+      // Notify the patient that their record has been deleted
+      const userNotification = new Notification({
         notificationID: Date.now(),
         patientID: deletionRequest.patientIndexNo,
-        message: `Patient deletion request approved - Index: ${deletionRequest.patientIndexNo}`,
-        type: 'deletion_request_approved',
+        message: `Your medical record has been permanently deleted as per your approval.`,
+        type: 'deletion_completed',
         category: 'patient'
       });
-      await notification.save();
-    } else {
-      // Create notification for rejected deletion request
-      const Notification = require("../models/notification");
-      const notification = new Notification({
-        notificationID: Date.now(),
-        patientID: deletionRequest.patientIndexNo,
-        message: `Patient deletion request rejected - Index: ${deletionRequest.patientIndexNo}`,
-        type: 'deletion_request_rejected',
-        category: 'patient'
-      });
-      await notification.save();
-    }
+      await userNotification.save();
 
-    res.status(200).json({
-      message: `Deletion request ${response} successfully`,
-      request: deletionRequest,
-      deletedPatientIndex: response === 'approved' ? deletionRequest.patientIndexNo : null
-    });
+      res.status(200).json({
+        message: "Medical record deleted successfully",
+        request: deletionRequest,
+        deletedPatientIndex: deletionRequest.patientIndexNo
+      });
+    } else {
+      // Admin rejects - cancel the deletion
+      deletionRequest.status = 'admin_rejected';
+      deletionRequest.adminConfirmedAt = new Date();
+      deletionRequest.adminFinalResponse = adminResponse || 'Deletion cancelled by admin';
+
+      await deletionRequest.save();
+
+      // Notify the patient that the deletion was cancelled by admin
+      const userNotification = new Notification({
+        notificationID: Date.now(),
+        patientID: deletionRequest.patientIndexNo,
+        message: `The deletion request was cancelled by the admin. Your medical record remains intact.`,
+        type: 'deletion_cancelled',
+        category: 'patient'
+      });
+      await userNotification.save();
+
+      res.status(200).json({
+        message: "Deletion request cancelled",
+        request: deletionRequest
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get deletion requests awaiting admin confirmation
+exports.getPendingAdminConfirmation = async (req, res) => {
+  try {
+    const requests = await DeletionRequest.find({ 
+      status: 'user_approved'
+    })
+      .populate('medicalRecordId')
+      .sort({ userRespondedAt: -1 });
+
+    res.status(200).json(requests);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -254,6 +352,27 @@ exports.getPendingRequestsCount = async (req, res) => {
 
     res.status(200).json({ count });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Clean up old pending requests (admin only)
+exports.cleanupOldRequests = async (req, res) => {
+  try {
+    // Delete all requests with old 'pending' status (from before the two-step flow was implemented)
+    // Also delete requests with 'approved' or 'rejected' status (old system)
+    const result = await DeletionRequest.deleteMany({
+      status: { $in: ['pending', 'approved', 'rejected'] }
+    });
+
+    console.log(`Cleaned up ${result.deletedCount} old deletion requests`);
+
+    res.status(200).json({
+      message: `Successfully cleaned up ${result.deletedCount} old deletion requests`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Error cleaning up old requests:', error);
     res.status(500).json({ message: error.message });
   }
 };

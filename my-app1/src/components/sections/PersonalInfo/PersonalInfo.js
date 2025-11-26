@@ -95,8 +95,36 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
     try {
       // If we have real API data, try to save it
       if (userData._id) {
-        const response = await axios.put(`http://localhost:8000/api/user/update/${userData._id}`, editData);
+        let response;
+        
+        // Check if there's a new photo to upload
+        if (editData.photoFile) {
+          const formData = new FormData();
+          formData.append('photo', editData.photoFile);
+          
+          // Add other fields to formData
+          Object.keys(editData).forEach(key => {
+            if (key !== 'photoFile' && key !== 'photoPreview' && editData[key] !== null && editData[key] !== undefined) {
+              formData.append(key, editData[key]);
+            }
+          });
+          
+          response = await axios.put(`http://localhost:8000/api/user/update/${userData._id}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+        } else {
+          response = await axios.put(`http://localhost:8000/api/user/update/${userData._id}`, editData);
+        }
+        
         const updatedUserData = response.data;
+        
+        // Keep the photoPreview if we uploaded a new photo
+        if (editData.photoPreview) {
+          updatedUserData.photoPreview = editData.photoPreview;
+        }
+        
         setUserData(updatedUserData);
         setIsEditing(false);
         console.log('Profile updated:', updatedUserData);
@@ -116,13 +144,20 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
         });
       } else {
         // For mock data, just update locally
-        setUserData(editData);
+        const updatedData = { ...editData };
+        
+        // Keep the photo preview for local storage
+        if (editData.photoPreview) {
+          updatedData.photoPreview = editData.photoPreview;
+        }
+        
+        setUserData(updatedData);
         setIsEditing(false);
-        console.log('Profile updated locally:', editData);
+        console.log('Profile updated locally:', updatedData);
         
         // Update the parent component's userData state even for mock data
         if (onUpdateUserData) {
-          onUpdateUserData(editData);
+          onUpdateUserData(updatedData);
         }
         
         // Add notification for profile update
@@ -151,6 +186,38 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
 
   const handleInputChange = (field, value) => {
     setEditData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePhotoChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB.');
+        return;
+      }
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditData(prev => ({
+          ...prev,
+          photoPreview: reader.result,
+          photoFile: file
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerPhotoInput = () => {
+    document.getElementById('photo-upload').click();
   };
 
 
@@ -185,25 +252,55 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
 
         <div className={styles.profileContent}>
           <div className={styles.profileSection}>
-            <div className={styles.profilePicture}>
-              {hasUserPhoto(userData) ? (
-                <img 
-                  src={getUserPhotoUrl(userData)} 
-                  alt="Profile" 
-                  className={styles.profileImage}
-                  onError={(e) => {
-                    console.log('Profile image failed to load:', e.target.src);
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div 
-                className={styles.profilePlaceholder}
-                style={{ display: hasUserPhoto(userData) ? 'none' : 'flex' }}
-              >
-                <i className="fas fa-user"></i>
+            <div className={styles.profilePictureContainer}>
+              <div className={styles.profilePicture}>
+                {/* Show new photo preview when editing, otherwise show current photo */}
+                {isEditing && editData?.photoPreview ? (
+                  <img 
+                    src={editData.photoPreview} 
+                    alt="New Profile" 
+                    className={styles.profileImage}
+                  />
+                ) : hasUserPhoto(userData) ? (
+                  <img 
+                    src={getUserPhotoUrl(userData)} 
+                    alt="Profile" 
+                    className={styles.profileImage}
+                    onError={(e) => {
+                      console.log('Profile image failed to load:', e.target.src);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={styles.profilePlaceholder}
+                  style={{ display: (isEditing && editData?.photoPreview) || hasUserPhoto(userData) ? 'none' : 'flex' }}
+                >
+                  <i className="fas fa-user"></i>
+                </div>
               </div>
+              
+              {/* Change Photo Button - Only visible when editing */}
+              {isEditing && (
+                <div className={styles.changePhotoSection}>
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    style={{ display: 'none' }}
+                  />
+                  <button 
+                    type="button" 
+                    className={styles.changePhotoButton}
+                    onClick={triggerPhotoInput}
+                  >
+                    <i className="fas fa-camera"></i>
+                    Change Photo
+                  </button>
+                </div>
+              )}
             </div>
             
             <div className={styles.userDetails}>

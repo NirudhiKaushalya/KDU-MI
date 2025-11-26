@@ -30,7 +30,7 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
 
   const handleRespondToRequest = async (requestId, response, patientResponse = '') => {
     try {
-      await axios.put(`http://localhost:8000/api/deletionRequest/respond/${requestId}`, {
+      const result = await axios.put(`http://localhost:8000/api/deletionRequest/respond/${requestId}`, {
         response,
         patientResponse
       });
@@ -38,22 +38,28 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
       // Refresh the requests list
       await fetchDeletionRequests();
       
-      const actionText = response === 'approved' ? 'approved' : 'rejected';
-      
-      // Add notification for deletion request response
-      addNotification({
-        type: response === 'approved' ? 'success' : 'warning',
-        icon: response === 'approved' ? '✅' : '❌',
-        title: `Deletion Request ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
-        description: `Your medical record deletion request has been ${actionText}.`,
-        category: 'patient'
-      });
-      
-      alert(`Deletion request ${actionText} successfully!`);
-      
-      // If approved, notify parent component that a patient was deleted
-      if (response === 'approved' && onPatientDeleted) {
-        onPatientDeleted();
+      if (response === 'approved') {
+        // User approved - now awaiting admin confirmation
+        addNotification({
+          type: 'info',
+          icon: '⏳',
+          title: 'Approval Sent to Admin',
+          description: 'Your approval has been sent to the admin for final confirmation.',
+          category: 'patient'
+        });
+        
+        alert('Your approval has been sent to the admin for final confirmation. The record will be deleted once the admin confirms.');
+      } else {
+        // User rejected
+        addNotification({
+          type: 'warning',
+          icon: '❌',
+          title: 'Deletion Request Rejected',
+          description: 'You have rejected the deletion request. Your medical record remains intact.',
+          category: 'patient'
+        });
+        
+        alert('Deletion request rejected successfully!');
       }
     } catch (error) {
       console.error('Error responding to deletion request:', error);
@@ -107,9 +113,11 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { text: 'Pending', class: styles.badgePending },
-      approved: { text: 'Approved', class: styles.badgeApproved },
-      rejected: { text: 'Rejected', class: styles.badgeRejected }
+      pending: { text: 'Pending Your Response', class: styles.badgePending },
+      user_approved: { text: 'Awaiting Admin Confirmation', class: styles.badgeWarning },
+      user_rejected: { text: 'You Rejected', class: styles.badgeRejected },
+      admin_confirmed: { text: 'Deleted', class: styles.badgeApproved },
+      admin_rejected: { text: 'Cancelled by Admin', class: styles.badgeRejected }
     };
     
     const config = statusConfig[status] || statusConfig.pending;
@@ -236,15 +244,48 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
                   </div>
                 )}
 
-                {request.status !== 'pending' && request.respondedAt && (
+                {request.status === 'user_approved' && (
+                  <div className={styles.responseSection}>
+                    <h4>Status:</h4>
+                    <p className={styles.responseText}>
+                      <i className="fas fa-clock"></i> You approved this request on {formatDate(request.userRespondedAt || request.respondedAt)}. 
+                      <br/><strong>Awaiting admin's final confirmation to delete the record.</strong>
+                    </p>
+                  </div>
+                )}
+
+                {request.status === 'user_rejected' && (
                   <div className={styles.responseSection}>
                     <h4>Your Response:</h4>
                     <p className={styles.responseText}>
-                      You {request.status} this deletion request on {formatDate(request.respondedAt)}.
+                      You rejected this deletion request on {formatDate(request.userRespondedAt || request.respondedAt)}.
                     </p>
                     {request.patientResponse && (
                       <p className={styles.patientResponse}>
                         <strong>Your comment:</strong> {request.patientResponse}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {request.status === 'admin_confirmed' && (
+                  <div className={styles.responseSection}>
+                    <h4>Completed:</h4>
+                    <p className={styles.responseText}>
+                      <i className="fas fa-check-circle" style={{color: '#10b981'}}></i> Your medical record has been permanently deleted on {formatDate(request.adminConfirmedAt)}.
+                    </p>
+                  </div>
+                )}
+
+                {request.status === 'admin_rejected' && (
+                  <div className={styles.responseSection}>
+                    <h4>Cancelled:</h4>
+                    <p className={styles.responseText}>
+                      <i className="fas fa-times-circle" style={{color: '#ef4444'}}></i> The admin cancelled this deletion request on {formatDate(request.adminConfirmedAt)}. Your medical record remains intact.
+                    </p>
+                    {request.adminFinalResponse && (
+                      <p className={styles.patientResponse}>
+                        <strong>Admin's reason:</strong> {request.adminFinalResponse}
                       </p>
                     )}
                   </div>

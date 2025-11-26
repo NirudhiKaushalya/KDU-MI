@@ -205,9 +205,13 @@
   text-align: left;
   background: none;
   border: none;
+  border-bottom: 1px solid #f3f4f6;
   font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   
   &:hover {
     background-color: #f3f4f6;
@@ -219,7 +223,55 @@
   
   &:last-child {
     border-radius: 0 0 8px 8px;
+    border-bottom: none;
   }
+}
+
+.medicineOptionMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.medicineName {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.medicineBrand {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.medicineOptionMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.medicineCategory {
+  color: #8b5cf6;
+  background: #f3e8ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.medicineStock {
+  color: #059669;
+  font-weight: 500;
+  
+  &.lowStock {
+    color: #f59e0b;
+  }
+}
+
+.noResults {
+  padding: 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
 }
 
 .medicinesTable {
@@ -257,8 +309,30 @@
   }
 }
 
+.medicineNameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.medicineCellName {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.medicineCellBrand {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.quantityWrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .quantityInput {
-  width: 80px;
+  width: 70px;
   padding: 6px 8px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
@@ -270,6 +344,12 @@
     border-color: #8b5cf6;
     box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
   }
+}
+
+.maxQuantity {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
 }
 
 .removeButton {

@@ -230,3 +230,22 @@ exports.searchMedicines = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Get medicines by category
+exports.getMedicinesByCategory = async (req, res) => {
+    try {
+        const { category } = req.params;
+        
+        const medicines = await Medicine.find({ category: category }).sort({ createdAt: -1 });
+        
+        res.json({
+            medicines: medicines,
+            message: `Found ${medicines.length} medicines in category "${category}"`,
+            totalCount: medicines.length,
+            category: category
+        });
+    } catch (error) {
+        console.error('Error fetching medicines by category:', error);
+        res.status(500).json({ message: error.message });
+    }
+};

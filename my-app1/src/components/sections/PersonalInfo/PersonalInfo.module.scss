@@ -127,8 +127,51 @@
   width: 100%;
 }
 
+.profilePictureContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .profilePicture {
   flex-shrink: 0;
+  position: relative;
+}
+
+.changePhotoSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.changePhotoButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+
+  i {
+    font-size: 14px;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .profilePlaceholder {

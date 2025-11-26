@@ -19,6 +19,11 @@ const Sidebar = ({ activeSection, onSectionChange }) => {
       label: 'Medicine Stocks'
     },
     {
+      section: 'deletion-approvals',
+      icon: '🗑️',
+      label: 'Deletion Approvals'
+    },
+    {
       section: 'reports',
       icon: '📄',
       label: 'Reports'

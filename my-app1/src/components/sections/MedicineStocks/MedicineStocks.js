@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import styles from './MedicineStocks.module.scss';
 import EditMedicineModal from '../../modals/EditMedicineModal/EditMedicineModal';
 
-const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, medicines = [], onRefreshMedicines, onSearchMedicines }) => {
+const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, medicines = [], onRefreshMedicines, onSearchMedicines, onFilterByCategory }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('All Categories');
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   // Generate medicine ID based on category
   const generateMedicineId = (category, index) => {
@@ -30,16 +31,14 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
     return `${prefix}-${paddedIndex}`;
   };
 
+  // When filtering by category, medicines are fetched from DB, so no client-side filtering needed
+  // Only apply search filter if there's a search term
   const filteredMedicines = medicines.filter(medicine => {
-    // Enhanced search filter - search by medicineName, category, and brand
+    if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = !searchTerm || 
-                         medicine.medicineName.toLowerCase().includes(searchLower) ||
-                         medicine.category.toLowerCase().includes(searchLower) ||
-                         medicine.brand.toLowerCase().includes(searchLower);
-    
-    const matchesCategory = filterCategory === 'All Categories' || medicine.category === filterCategory;
-    return matchesSearch && matchesCategory;
+    return medicine.medicineName.toLowerCase().includes(searchLower) ||
+           medicine.category.toLowerCase().includes(searchLower) ||
+           medicine.brand.toLowerCase().includes(searchLower);
   });
 
   const getStockLevelClass = (stockLevel) => {
@@ -102,6 +101,27 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
     onRefreshMedicines(); // Clear search results and go back to session-based view
   };
 
+  const handleCategoryChange = async (category) => {
+    setFilterCategory(category);
+    setSearchTerm(''); // Clear search when filtering by category
+    
+    if (category === 'All Categories') {
+      // Reset to show recent/session medicines
+      onRefreshMedicines();
+    } else {
+      // Fetch all medicines in this category from the database
+      setIsFiltering(true);
+      try {
+        await onFilterByCategory(category);
+      } catch (error) {
+        console.error('Category filter error:', error);
+        alert('Error filtering medicines by category. Please try again.');
+      } finally {
+        setIsFiltering(false);
+      }
+    }
+  };
+
   const categories = ['All Categories', 'Analgesics', 'Antibiotics', 'Antiemetics', 'Antihistamines', 'Antiseptics', 'Vitamins'];
 
   // Format date to "Month Date Year" format
@@ -127,7 +147,9 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
     <div className={styles.medicineStocks}>
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>Recently Added</h3>
+          <h3 className={styles.cardTitle}>
+            {filterCategory === 'All Categories' ? 'Recently Added' : `${filterCategory} (${filteredMedicines.length})`}
+          </h3>
           <div className={styles.headerButtons}>
             {onRefreshMedicines && (
               <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={onRefreshMedicines} title="Refresh Medicine List">
@@ -175,8 +197,9 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
           <select 
             className={styles.formControl} 
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
+            onChange={(e) => handleCategoryChange(e.target.value)}
             style={{ width: '200px' }}
+            disabled={isFiltering}
           >
             {categories.map(category => (
               <option key={category} value={category}>{category}</option>
@@ -254,8 +277,16 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
         ) : (
           <div className="empty-state">
             <i className="fas fa-pills"></i>
-            <h3>No medicines added yet</h3>
-            <p>Medicines added during this session will appear here</p>
+            <h3>
+              {isFiltering ? 'Loading...' : 
+               filterCategory === 'All Categories' ? 'No medicines added yet' : 
+               `No medicines found in ${filterCategory}`}
+            </h3>
+            <p>
+              {filterCategory === 'All Categories' 
+                ? 'Medicines added during this session will appear here' 
+                : 'Try selecting a different category or add new medicines'}
+            </p>
             <button className={`${styles.btn} ${styles.btnPrimary} mt-20`} onClick={onAddMedicine}>
               <i className="fas fa-plus"></i> Add Medicine
             </button>

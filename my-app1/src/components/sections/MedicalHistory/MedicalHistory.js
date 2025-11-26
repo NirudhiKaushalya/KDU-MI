@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import styles from './MedicalHistory.module.scss';
 import MedicalRecordModal from '../../modals/MedicalRecordModal/MedicalRecordModal';
 
 const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Helper function to format date for HTML date input (YYYY-MM-DD)
   const formatDateForInput = (dateString) => {
@@ -31,52 +35,68 @@ const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) =
     }
   };
   
-  // Get current user's index number for filtering
+  // Get current user's index number
   const currentUserIndexNo = userData?.indexNo;
-  
-  // If userData is not available, try to extract from userName or show message
-  if (!currentUserIndexNo) {
-    console.log('MedicalHistory - No userData available, cannot filter records');
-  }
-  
-  // Debug logging
-  console.log('MedicalHistory - Current user index:', currentUserIndexNo);
-  console.log('MedicalHistory - All patients:', patients);
-  console.log('MedicalHistory - Patient index numbers:', patients.map(p => p.indexNo));
-  
-  // Filter patients to show only records for the current user
-  const userPatients = currentUserIndexNo 
-    ? patients.filter(patient => patient.indexNo === currentUserIndexNo)
-    : [];
-    
-  console.log('MedicalHistory - Filtered user patients:', userPatients);
-  
-  // Convert filtered patients to medical records format
-  const medicalRecords = userPatients.map((patient, index) => {
-    console.log('MedicalHistory - Processing patient:', patient);
-    
-    const rawDate = patient.admittedDate || patient.consultedDate || '';
-    const formattedDate = formatDateForInput(rawDate);
-    
-    return {
-      id: patient.id,
-      recordNo: patient.indexNo,
-      indexNo: patient.indexNo, // For the modal
-      date: rawDate, // Keep original for display
-      consultedDate: formattedDate, // Formatted for the modal input
-      consultedTime: patient.admittedTime || patient.consultedTime || '',
-      diagnosis: patient.medicalCondition || patient.condition || '',
-      medicalCondition: patient.medicalCondition || patient.condition || '', // For the modal
-      role: 'Doctor',
-      patientName: patient.name || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
-      labReports: patient.labReports || null,
-      prescribedMedicines: patient.prescribedMedicines || [],
-      additionalNotes: patient.additionalNotes || '',
-      reasonForConsultation: patient.reason || patient.reasonForConsultation || ''
+
+  // Fetch medical records from database
+  useEffect(() => {
+    const fetchMedicalRecords = async () => {
+      if (!currentUserIndexNo) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Search for all patient records with this index number
+        const response = await axios.get(`http://localhost:8000/api/patient/search?query=${encodeURIComponent(currentUserIndexNo)}`);
+        const patientsData = response.data.patients || [];
+        
+        console.log('MedicalHistory - Fetched records from DB:', patientsData);
+        
+        // Filter to ensure exact match on indexNo
+        const userRecords = patientsData.filter(patient => patient.indexNo === currentUserIndexNo);
+        
+        // Convert to medical records format
+        const records = userRecords.map((patient) => {
+          const rawDate = patient.admittedDate || patient.consultedDate || '';
+          const formattedDate = formatDateForInput(rawDate);
+          
+          return {
+            id: patient._id || patient.id,
+            recordNo: patient.indexNo,
+            indexNo: patient.indexNo,
+            date: rawDate,
+            consultedDate: formattedDate,
+            consultedTime: patient.admittedTime || patient.consultedTime || '',
+            diagnosis: patient.medicalCondition || patient.condition || '',
+            medicalCondition: patient.medicalCondition || patient.condition || '',
+            role: 'Doctor',
+            patientName: patient.name || `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+            labReports: patient.labReports || null,
+            prescribedMedicines: patient.prescribedMedicines || [],
+            additionalNotes: patient.additionalNotes || '',
+            reasonForConsultation: patient.reason || patient.reasonForConsultation || ''
+          };
+        });
+        
+        // Sort by date (newest first)
+        records.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        setMedicalRecords(records);
+        console.log('MedicalHistory - Final medical records:', records);
+      } catch (err) {
+        console.error('Error fetching medical records:', err);
+        setError('Failed to load medical records. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     };
-  });
-  
-  console.log('MedicalHistory - Final medical records:', medicalRecords);
+
+    fetchMedicalRecords();
+  }, [currentUserIndexNo]);
 
   const handleRecordClick = (record) => {
     console.log('MedicalHistory - Record clicked:', record);
@@ -102,7 +122,23 @@ const MedicalHistory = ({ userName = 'User', patients = [], userData = null }) =
         </div>
         
         <div className={styles.tableContainer}>
-          {!currentUserIndexNo ? (
+          {loading ? (
+            <div className={styles.noRecordsMessage}>
+              <div className={styles.noRecordsIcon}>
+                <i className="fas fa-spinner fa-spin" style={{ fontSize: '32px', color: '#8b5cf6' }}></i>
+              </div>
+              <h3 className={styles.noRecordsTitle}>Loading Medical Records...</h3>
+              <p className={styles.noRecordsDescription}>
+                Please wait while we fetch your medical history.
+              </p>
+            </div>
+          ) : error ? (
+            <div className={styles.noRecordsMessage}>
+              <div className={styles.noRecordsIcon}>⚠️</div>
+              <h3 className={styles.noRecordsTitle}>Error Loading Records</h3>
+              <p className={styles.noRecordsDescription}>{error}</p>
+            </div>
+          ) : !currentUserIndexNo ? (
             <div className={styles.noRecordsMessage}>
               <div className={styles.noRecordsIcon}>⚠️</div>
               <h3 className={styles.noRecordsTitle}>User Data Not Available</h3>

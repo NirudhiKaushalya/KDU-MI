@@ -16,7 +16,8 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     additionalNotes: record?.additionalNotes || '',
     reasonForConsultation: record?.reasonForConsultation || '',
     consultedTime: record?.consultedTime || '',
-    labReports: record?.labReports || null
+    labReports: record?.labReports || null,
+    prescribedMedicines: record?.prescribedMedicines || []
   });
   
   // Debug logging for form data
@@ -35,7 +36,8 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
         additionalNotes: record.additionalNotes || '',
         reasonForConsultation: record.reasonForConsultation || '',
         consultedTime: record.consultedTime || '',
-        labReports: record.labReports || null
+        labReports: record.labReports || null,
+        prescribedMedicines: record.prescribedMedicines || []
       });
     }
   }, [record]);
@@ -227,6 +229,22 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
     yPosition += 15;
 
 
+    // Prescribed medicines section
+    if (formData.prescribedMedicines && formData.prescribedMedicines.length > 0) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Prescribed Medicines:', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFont(undefined, 'normal');
+      formData.prescribedMedicines.forEach((medicine, index) => {
+        const medicineName = medicine.name || medicine.medicineName || 'Unknown';
+        const quantity = medicine.quantity || 0;
+        doc.text(`${index + 1}. ${medicineName} - ${quantity} units`, 25, yPosition);
+        yPosition += 7;
+      });
+      yPosition += 8;
+    }
+
     // Additional notes section
     if (formData.additionalNotes) {
       doc.setFont(undefined, 'bold');
@@ -414,6 +432,31 @@ const MedicalRecordModal = ({ record, onClose, onSave }) => {
               </div>
             </div>
           </div>
+
+          {/* Prescribed Medicines Section - Full Width */}
+          {isEditMode && formData.prescribedMedicines && formData.prescribedMedicines.length > 0 && (
+            <div className={styles.prescribedMedicinesSection}>
+              <label className={styles.fieldLabel}>Prescribed Medicines:</label>
+              <div className={styles.medicinesTable}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Medicine Name</th>
+                      <th>Quantity Issued</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.prescribedMedicines.map((medicine, index) => (
+                      <tr key={index}>
+                        <td>{medicine.name || medicine.medicineName || 'Unknown'}</td>
+                        <td>{medicine.quantity || 0} units</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className={styles.modalFooter}>
             <button type="button" className={styles.cancelButton} onClick={onClose}>
