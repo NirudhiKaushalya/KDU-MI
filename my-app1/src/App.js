@@ -72,10 +72,10 @@ const AppContent = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load patients from database
-        const patientsResponse = await axios.get('http://localhost:8000/api/patient/');
-        setPatients(patientsResponse.data);
-        console.log('Loaded patients from database:', patientsResponse.data);
+        // Start with empty patients array - only show patients admitted during current session
+        // Admin can search for past patient records by index number
+        setPatients([]);
+        console.log('Started with empty patients array - will show only newly admitted patients');
 
         // Start with empty medicines array - only show medicines added during current session
         setMedicines([]);
@@ -261,12 +261,9 @@ const AppContent = () => {
     }
   };
 
-  // Clear any existing dummy notifications on app start
+  // Clear any existing dummy notifications on app start (only once)
   useEffect(() => {
-    // Clear all notifications to remove any dummy data
-    clearAllNotifications();
-    
-    // Also clear any localStorage data that might contain dummy activities
+    // Clear any localStorage data that might contain dummy activities
     if (typeof window !== 'undefined') {
       // Clear user activities for all users that might have dummy data
       Object.keys(localStorage).forEach(key => {
@@ -275,53 +272,15 @@ const AppContent = () => {
         }
       });
     }
-  }, [clearAllNotifications]);
+    // Note: We don't clear notifications here anymore to preserve alerts
+  }, []); // Empty dependency - only run once on mount
 
-  // Check for stock alerts whenever medicines change (only for admin users)
+  // Check for stock alerts when session medicines change (for newly added medicines)
   useEffect(() => {
     if (medicines.length > 0 && userType === 'admin') {
       checkStockAlerts(medicines);
     }
   }, [medicines, checkStockAlerts, userType]);
-
-  // Additional trigger: Check stock alerts when user logs in as admin (if medicines are already loaded)
-  useEffect(() => {
-    if (userType === 'admin' && medicines.length > 0) {
-      // Add a small delay to ensure everything is properly initialized
-      setTimeout(() => {
-        checkStockAlerts(medicines);
-      }, 1000);
-    }
-  }, [userType, medicines, checkStockAlerts]);
-
-  // Force stock alerts on page load for admin users
-  useEffect(() => {
-    const forceStockAlerts = () => {
-      if (userType === 'admin' && medicines.length > 0) {
-        // Check each medicine manually and add alerts
-        medicines.forEach(medicine => {
-          const currentStock = parseInt(medicine.quantity) || 0;
-          const lowStockThreshold = parseInt(medicine.lowStockThreshold) || 10;
-          
-          if (currentStock <= lowStockThreshold && lowStockThreshold > 0) {
-            addNotification({
-              type: 'warning',
-              icon: '⚠️',
-              title: `Low Stock Alert: ${medicine.medicineName}`,
-              description: `Stock for ${medicine.medicineName} is running low. Current quantity: ${currentStock} units (Threshold: ${lowStockThreshold}).`,
-              category: 'stock',
-              medicineId: medicine._id || medicine.id,
-              medicineName: medicine.medicineName
-            });
-          }
-        });
-      }
-    };
-
-    // Run after 2 seconds to ensure everything is loaded
-    const timer = setTimeout(forceStockAlerts, 2000);
-    return () => clearTimeout(timer);
-  }, [userType, medicines, addNotification]);
 
 
   const handleLogin = (success, type = null, name = '', loginUserData = null) => {
@@ -347,6 +306,46 @@ const AppContent = () => {
       setActiveSection('dashboard');
     }
   };
+
+  // Track if we've already fetched alerts for this admin session
+  const [alertsFetched, setAlertsFetched] = useState(false);
+
+  // Fetch all medicines and check for alerts when admin logs in
+  useEffect(() => {
+    const fetchMedicinesAndCheckAlerts = async () => {
+      if (isAuthenticated && userType === 'admin' && !alertsFetched) {
+        // Mark as fetched to prevent duplicate calls
+        setAlertsFetched(true);
+        
+        // Delay to ensure NotificationContext userType is updated
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+          console.log('Admin logged in - fetching all medicines for alerts...');
+          const response = await axios.get('http://localhost:8000/api/medicines/all');
+          const allMedicinesData = response.data.medicines || [];
+          console.log('Fetched medicines for alerts:', allMedicinesData.length);
+          
+          // Check for stock and expiry alerts
+          if (allMedicinesData.length > 0) {
+            console.log('Checking stock alerts for', allMedicinesData.length, 'medicines');
+            checkStockAlerts(allMedicinesData);
+          }
+        } catch (error) {
+          console.error('Error fetching medicines for alerts on login:', error);
+        }
+      }
+    };
+
+    fetchMedicinesAndCheckAlerts();
+  }, [isAuthenticated, userType, alertsFetched, checkStockAlerts]);
+
+  // Reset alertsFetched when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setAlertsFetched(false);
+    }
+  }, [isAuthenticated]);
 
   const handleShowRegistration = () => {
     setShowRegistration(true);
@@ -1030,6 +1029,89 @@ const AppContent = () => {
     console.log('Refreshed medicines - table cleared, will show only newly added medicines');
   };
 
+  const handleRefreshPatients = async () => {
+    // Clear the table - only show patients admitted during current session
+    setPatients([]);
+    console.log('Refreshed patients - table cleared, will show only newly admitted patients');
+  };
+
+  const handleSearchPatients = async (searchQuery) => {
+    try {
+      console.log('Searching for patients with index:', searchQuery);
+      const response = await axios.get(`http://localhost:8000/api/patient/search?query=${encodeURIComponent(searchQuery)}`);
+      console.log('Patient search response:', response.data);
+      const patientsData = response.data.patients || [];
+      
+      setPatients(patientsData);
+      console.log(`Search results for "${searchQuery}":`, patientsData);
+      
+      if (patientsData.length === 0) {
+        alert(`No patient records found for index number "${searchQuery}"`);
+      }
+    } catch (error) {
+      console.error('Error searching patients:', error);
+      console.error('Error details:', error.response?.data || error.message);
+
+      const serverMessage = error.response?.data?.message;
+      if (serverMessage) {
+        alert(`Search failed: ${serverMessage}`);
+      } else if (error.message && error.message.toLowerCase().includes('network')) {
+        alert('Unable to reach the backend server. Search not available in local-only mode.');
+      } else {
+        alert('An error occurred while searching patients. Showing no results.');
+      }
+
+      setPatients([]);
+      return;
+    }
+  };
+
+  const handleFilterPatients = async (filters) => {
+    try {
+      console.log('Filtering patients with criteria:', filters);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filters.indexNumber) params.append('indexNumber', filters.indexNumber);
+      if (filters.condition && filters.condition !== 'Any') params.append('condition', filters.condition);
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      if (filters.minAge) params.append('minAge', filters.minAge);
+      if (filters.maxAge) params.append('maxAge', filters.maxAge);
+      
+      const queryString = params.toString();
+      
+      // If no filters, don't make the API call
+      if (!queryString) {
+        console.log('No filters applied, keeping current view');
+        return;
+      }
+      
+      const response = await axios.get(`http://localhost:8000/api/patient/filter?${queryString}`);
+      console.log('Filter response:', response.data);
+      const patientsData = response.data.patients || [];
+      
+      setPatients(patientsData);
+      console.log('Filtered results:', patientsData);
+      
+      if (patientsData.length === 0) {
+        alert('No patient records found matching your filter criteria');
+      }
+    } catch (error) {
+      console.error('Error filtering patients:', error);
+      console.error('Error details:', error.response?.data || error.message);
+
+      const serverMessage = error.response?.data?.message;
+      if (serverMessage) {
+        alert(`Filter failed: ${serverMessage}`);
+      } else if (error.message && error.message.toLowerCase().includes('network')) {
+        alert('Unable to reach the backend server. Filter not available in local-only mode.');
+      } else {
+        alert('An error occurred while filtering patients.');
+      }
+    }
+  };
+
   const handleSearchMedicines = async (searchQuery) => {
     try {
       console.log('Searching for:', searchQuery);
@@ -1047,9 +1129,24 @@ const AppContent = () => {
       setMedicines(medicinesWithCorrectStockLevel);
       console.log(`Search results for "${searchQuery}":`, medicinesWithCorrectStockLevel);
     } catch (error) {
+      // Handle search errors gracefully so the UI doesn't show a generic "Error searching medicines" alert
       console.error('Error searching medicines:', error);
-      console.error('Error details:', error.response?.data);
-      throw error;
+      console.error('Error details:', error.response?.data || error.message);
+
+      // Provide a user-friendly message depending on error type
+      const serverMessage = error.response?.data?.message;
+      if (serverMessage) {
+        alert(`Search failed: ${serverMessage}`);
+      } else if (error.message && error.message.toLowerCase().includes('network')) {
+        alert('Unable to reach the backend server. Search not available in local-only mode.');
+      } else {
+        alert('An error occurred while searching medicines. Showing no results.');
+      }
+
+      // Clear any previous search results to avoid stale data
+      setMedicines([]);
+      // Do not re-throw — allow the UI to continue without a blocking exception
+      return;
     }
   };
 
@@ -1066,6 +1163,9 @@ const AppContent = () => {
         patients={patients}
         onUpdatePatient={handleUpdatePatient}
         onDeletePatient={handleDeletePatient}
+        onRefreshPatients={handleRefreshPatients}
+        onSearchPatients={handleSearchPatients}
+        onFilterPatients={handleFilterPatients}
       />,
       'medicine-stocks': <MedicineStocks 
         {...sectionProps} 

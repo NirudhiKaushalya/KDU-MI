@@ -73,6 +73,26 @@ exports.getPatients = async (req,res) => {
     }
 };
 
+// Get patient statistics (total count)
+exports.getPatientStats = async (req, res) => {
+    try {
+        // Get total count of all patients in the database
+        const totalPatients = await Patient.countDocuments();
+        
+        // Get count of unique patients (by index number)
+        const uniquePatients = await Patient.distinct('indexNo');
+        
+        res.json({
+            total: totalPatients,
+            uniquePatients: uniquePatients.length,
+            message: `Found ${totalPatients} patient records (${uniquePatients.length} unique patients)`
+        });
+    } catch (error) {
+        console.error('Error fetching patient stats:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 //Get single patient
 exports.getPatientById = async (req,res) => {
     try{
@@ -184,6 +204,123 @@ exports.getPatientByIndexNo = async (req, res) => {
         }
         res.json(patient);
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Search patients by index number (returns ALL records for matching patients)
+exports.searchPatients = async (req, res) => {
+    try {
+        const { query } = req.query;
+        
+        if (!query || query.trim() === '') {
+            return res.status(400).json({ message: "Search query is required" });
+        }
+
+        // Search for all patient records matching the index number (case-insensitive)
+        const patients = await Patient.find({
+            indexNo: { $regex: query, $options: 'i' }
+        }).sort({ consultedDate: -1, consultedTime: -1 });
+
+        res.json({ 
+            patients,
+            count: patients.length,
+            message: patients.length > 0 
+                ? `Found ${patients.length} record(s) for index number matching "${query}"` 
+                : `No records found for index number "${query}"`
+        });
+    } catch (error) {
+        console.error('Error searching patients:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Filter patients with multiple criteria (searches database for past records)
+exports.filterPatients = async (req, res) => {
+    try {
+        const { indexNumber, condition, startDate, endDate, minAge, maxAge } = req.query;
+        
+        // Build query object based on provided filters
+        let query = {};
+        
+        // Index number filter (case-insensitive partial match)
+        if (indexNumber && indexNumber.trim() !== '') {
+            query.indexNo = { $regex: indexNumber, $options: 'i' };
+        }
+        
+        // Condition filter
+        if (condition && condition !== 'Any' && condition.trim() !== '') {
+            query.condition = { $regex: condition, $options: 'i' };
+        }
+        
+        // Date range filter (using consultedDate or admittedDate)
+        // Dates are stored as strings in "YYYY-MM-DD" format, so we use string comparison
+        if (startDate || endDate) {
+            let dateConditions = [];
+            
+            // Build date query for consultedDate
+            let consultedDateQuery = {};
+            let admittedDateQuery = {};
+            
+            if (startDate) {
+                // Format: "YYYY-MM-DD" - string comparison works for this format
+                consultedDateQuery.$gte = startDate;
+                admittedDateQuery.$gte = startDate;
+            }
+            if (endDate) {
+                consultedDateQuery.$lte = endDate;
+                admittedDateQuery.$lte = endDate;
+            }
+            
+            // Check if consultedDate matches OR admittedDate matches
+            if (Object.keys(consultedDateQuery).length > 0) {
+                dateConditions.push({ consultedDate: consultedDateQuery });
+                dateConditions.push({ admittedDate: admittedDateQuery });
+            }
+            
+            if (dateConditions.length > 0) {
+                query.$or = dateConditions;
+            }
+        }
+        
+        // Age range filter
+        if (minAge || maxAge) {
+            query.age = {};
+            if (minAge) {
+                query.age.$gte = parseInt(minAge);
+            }
+            if (maxAge) {
+                query.age.$lte = parseInt(maxAge);
+            }
+            // If no age conditions added, remove the empty object
+            if (Object.keys(query.age).length === 0) {
+                delete query.age;
+            }
+        }
+        
+        console.log('Filter query:', JSON.stringify(query, null, 2));
+        
+        // If no filters provided, return empty array (don't return all records)
+        if (Object.keys(query).length === 0) {
+            return res.json({ 
+                patients: [],
+                count: 0,
+                message: 'Please provide at least one filter criteria'
+            });
+        }
+        
+        // Execute query
+        const patients = await Patient.find(query).sort({ consultedDate: -1, consultedTime: -1 });
+        
+        res.json({ 
+            patients,
+            count: patients.length,
+            message: patients.length > 0 
+                ? `Found ${patients.length} record(s) matching your criteria` 
+                : 'No records found matching your criteria'
+        });
+    } catch (error) {
+        console.error('Error filtering patients:', error);
         res.status(500).json({ message: error.message });
     }
 };

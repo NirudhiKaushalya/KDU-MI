@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import styles from './ReportModal.module.scss';
 import { useSettings } from '../../..//contexts/SettingsContext';
 
@@ -13,8 +14,57 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
     patientId: ''
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [allPatients, setAllPatients] = useState([]);
+  const [allMedicines, setAllMedicines] = useState([]);
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+  const [isLoadingMedicines, setIsLoadingMedicines] = useState(false);
 
   const { settings } = useSettings();
+
+  // Fetch all patients from database when modal opens for Patient Report
+  useEffect(() => {
+    const fetchAllPatients = async () => {
+      if (isOpen && reportType === 'Patient Report') {
+        setIsLoadingPatients(true);
+        try {
+          const response = await axios.get('http://localhost:8000/api/patient/');
+          console.log('Fetched all patients for report:', response.data);
+          setAllPatients(response.data);
+        } catch (error) {
+          console.error('Error fetching patients for report:', error);
+          setAllPatients([]);
+        } finally {
+          setIsLoadingPatients(false);
+        }
+      }
+    };
+
+    fetchAllPatients();
+  }, [isOpen, reportType]);
+
+  // Fetch all medicines from database when modal opens for medicine-related reports
+  useEffect(() => {
+    const fetchAllMedicines = async () => {
+      if (isOpen && (reportType === 'Inventory Report' || reportType === 'Low Stock Report' || reportType === 'Expiry Report')) {
+        setIsLoadingMedicines(true);
+        try {
+          // Use /all endpoint to get ALL medicines, not just recent ones
+          const response = await axios.get('http://localhost:8000/api/medicines/all');
+          console.log('Fetched all medicines for report:', response.data);
+          // Handle both array response and object with medicines property
+          const medicinesData = Array.isArray(response.data) ? response.data : (response.data.medicines || []);
+          setAllMedicines(medicinesData);
+        } catch (error) {
+          console.error('Error fetching medicines for report:', error);
+          setAllMedicines([]);
+        } finally {
+          setIsLoadingMedicines(false);
+        }
+      }
+    };
+
+    fetchAllMedicines();
+  }, [isOpen, reportType]);
 
   if (!isOpen) return null;
 
@@ -32,6 +82,23 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
         [name]: value
       }));
     }
+  };
+
+  // Reset all filters and close modal
+  const handleCancel = () => {
+    // Reset date range
+    setDateRange({
+      startDate: '',
+      endDate: ''
+    });
+    // Reset filters
+    setFilters({
+      category: '',
+      status: '',
+      patientId: ''
+    });
+    // Close the modal
+    onClose();
   };
 
 
@@ -76,18 +143,16 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
     
     switch (reportType) {
       case 'Patient Report':
-        // Apply filters to patient data (not medical records)
-        let filteredRecords = [...patients];
+        // Use allPatients from database (fetched via API) instead of session patients
+        let filteredRecords = [...allPatients];
         
-        // Filter by date range
+        // Filter by date range (using string comparison for YYYY-MM-DD format)
         if (dateRange.startDate || dateRange.endDate) {
           filteredRecords = filteredRecords.filter(record => {
-            const recordDate = new Date(record.admittedDate || record.consultedDate);
-            const startDate = dateRange.startDate ? new Date(dateRange.startDate) : null;
-            const endDate = dateRange.endDate ? new Date(dateRange.endDate) : null;
+            const recordDate = record.consultedDate || record.admittedDate || '';
             
-            if (startDate && recordDate < startDate) return false;
-            if (endDate && recordDate > endDate) return false;
+            if (dateRange.startDate && recordDate < dateRange.startDate) return false;
+            if (dateRange.endDate && recordDate > dateRange.endDate) return false;
             return true;
           });
         }
@@ -115,11 +180,25 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
         };
         return patientReport;
       case 'Inventory Report':
-        // Apply category filter to medicines
-        let filteredMedicines = [...medicines];
+        // Use allMedicines from database instead of session medicines
+        let filteredMedicines = [...allMedicines];
         
-        console.log('Inventory Report - Original medicines count:', medicines.length);
+        console.log('Inventory Report - Original medicines count:', allMedicines.length);
         console.log('Inventory Report - Selected category filter:', filters.category);
+        console.log('Inventory Report - Date range:', dateRange);
+        
+        // Filter by date range (using createdAt - when medicine was added)
+        if (dateRange.startDate || dateRange.endDate) {
+          filteredMedicines = filteredMedicines.filter(medicine => {
+            // Use createdAt timestamp for filtering
+            const createdDate = medicine.createdAt ? new Date(medicine.createdAt).toISOString().split('T')[0] : '';
+            
+            if (dateRange.startDate && createdDate < dateRange.startDate) return false;
+            if (dateRange.endDate && createdDate > dateRange.endDate) return false;
+            return true;
+          });
+          console.log('Inventory Report - After date filter:', filteredMedicines.length);
+        }
         
         // Filter by category
         if (filters.category) {
@@ -136,7 +215,8 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           columns: ['Medicine Name', 'Category', 'Brand', 'Quantity', 'Stock Level', 'Low Stock Threshold']
         };
       case 'Low Stock Report':
-        let lowStockMedicines = medicines.filter(med => {
+        // Use allMedicines from database
+        let lowStockMedicines = allMedicines.filter(med => {
           // Check if medicine has low stock based on quantity vs threshold
           const hasLowStock = med.lowStockThreshold && 
                              med.quantity && 
@@ -147,6 +227,17 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           
           return hasLowStock || isLowStockLevel;
         });
+
+        // Filter by date range (using createdAt - when medicine was added)
+        if (dateRange.startDate || dateRange.endDate) {
+          lowStockMedicines = lowStockMedicines.filter(medicine => {
+            const createdDate = medicine.createdAt ? new Date(medicine.createdAt).toISOString().split('T')[0] : '';
+            
+            if (dateRange.startDate && createdDate < dateRange.startDate) return false;
+            if (dateRange.endDate && createdDate > dateRange.endDate) return false;
+            return true;
+          });
+        }
 
         // Apply stock level filter if selected
         if (filters.status) {
@@ -160,21 +251,31 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           columns: ['Medicine Name', 'Category', 'Brand', 'Current Quantity', 'Low Stock Threshold', 'Stock Level']
         };
       case 'Expiry Report':
+        // Use allMedicines from database
         return {
           title: 'Medicine Expiry Report',
           description: 'Medicines approaching their expiry dates for timely management',
-          data: medicines.filter(med => {
+          data: allMedicines.filter(med => {
             const expiryDate = new Date(med.expiryDate);
             const today = new Date();
             const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
 
-            // Respect settings' expiryAlertDays; default to 7 if missing
-            const alertWindowDays = settings?.expiryAlertDays || 7;
+            // Use the dropdown filter value if selected, otherwise show all future expiry dates
+            // filters.status contains: "" (All), "30", "60", or "90"
+            let alertWindowDays;
+            if (filters.status) {
+              // User selected a specific filter (30, 60, or 90 days)
+              alertWindowDays = parseInt(filters.status);
+            } else {
+              // "All" selected - show all medicines with future expiry dates (within 365 days)
+              alertWindowDays = 365;
+            }
 
             // Optionally apply date range if provided
             const startOk = !dateRange.startDate || expiryDate >= new Date(dateRange.startDate);
             const endOk = !dateRange.endDate || expiryDate <= new Date(dateRange.endDate);
 
+            // Show medicines expiring within the selected window (and not already expired)
             return daysUntilExpiry >= 0 && daysUntilExpiry <= alertWindowDays && startOk && endOk;
           }),
           columns: ['Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry']
@@ -360,11 +461,11 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
+    <div className={styles.modalOverlay} onClick={handleCancel}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{reportInfo.title}</h2>
-          <button className={styles.closeButton} onClick={onClose}>
+          <button className={styles.closeButton} onClick={handleCancel}>
             <i className="fas fa-times"></i>
           </button>
         </div>
@@ -416,7 +517,13 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
               </div>
             </div>
 
-            {reportInfo.data.length > 0 ? (
+            {(isLoadingPatients && reportType === 'Patient Report') || 
+             (isLoadingMedicines && (reportType === 'Inventory Report' || reportType === 'Low Stock Report' || reportType === 'Expiry Report')) ? (
+              <div className={styles.noData}>
+                <i className="fas fa-spinner fa-spin"></i>
+                <p>Loading {reportType === 'Patient Report' ? 'patient records' : 'medicines'} from database...</p>
+              </div>
+            ) : reportInfo.data.length > 0 ? (
               <div className={styles.previewTable}>
                 <table>
                   <thead>
@@ -427,7 +534,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
                     </tr>
                   </thead>
                   <tbody>
-                    {reportInfo.data.slice(0, 5).map((item, index) => (
+                    {(reportType === 'Inventory Report' ? reportInfo.data : reportInfo.data.slice(0, 5)).map((item, index) => (
                       <tr key={index}>
                         {reportInfo.columns.map((column, colIndex) => (
                           <td key={colIndex}>
@@ -466,7 +573,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
                     ))}
                   </tbody>
                 </table>
-                {reportInfo.data.length > 5 && (
+                {reportType !== 'Inventory Report' && reportInfo.data.length > 5 && (
                   <p className={styles.moreRecords}>
                     ... and {reportInfo.data.length - 5} more records
                   </p>
@@ -485,7 +592,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           {/* If viewing an existing report show Close / Download CSV / Print */}
           {report ? (
             <>
-              <button className={styles.cancelButton} onClick={onClose}>Close</button>
+              <button className={styles.cancelButton} onClick={handleCancel}>Close</button>
               <button className={styles.csvButton} onClick={downloadCSV}>
                 <i className="fas fa-download"></i>
                 Download CSV
@@ -497,7 +604,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
             </>
           ) : (
             <>
-              <button className={styles.cancelButton} onClick={onClose}>
+              <button className={styles.cancelButton} onClick={handleCancel}>
                 Cancel
               </button>
               <button 

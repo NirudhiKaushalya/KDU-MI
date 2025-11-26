@@ -157,6 +157,40 @@ exports.getMedicineByName = async (req, res) => {
     }
 };
 
+// Get medicine statistics
+exports.getMedicineStats = async (req, res) => {
+    try {
+        const medicines = await Medicine.find();
+        const total = medicines.length;
+        
+        // Calculate low stock items
+        const lowStock = medicines.filter(medicine => {
+            const currentStock = parseInt(medicine.quantity) || 0;
+            const threshold = parseInt(medicine.lowStockThreshold) || 10;
+            return currentStock <= threshold;
+        }).length;
+
+        // Calculate expiring soon items (within next 30 days by default)
+        const expiryDays = 30;
+        const today = new Date();
+        const expiringSoon = medicines.filter(medicine => {
+            if (!medicine.expiryDate) return false;
+            const expiryDate = new Date(medicine.expiryDate);
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            return daysUntilExpiry <= expiryDays && daysUntilExpiry >= 0;
+        }).length;
+
+        res.json({
+            total,
+            lowStock,
+            expiringSoon
+        });
+    } catch (error) {
+        console.error('Error getting medicine stats:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Search medicines in database
 exports.searchMedicines = async (req, res) => {
     try {

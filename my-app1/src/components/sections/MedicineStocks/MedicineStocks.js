@@ -142,10 +142,9 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
         
         <div className={`${styles.flexBetween} ${styles.mb20}`}>
           <form className={styles.searchBar} onSubmit={handleSearch}>
-            <i className="fas fa-search"></i>
             <input 
               type="text" 
-              placeholder="Search by name, brand, or category..." 
+              placeholder="Search by name,id" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -165,7 +164,12 @@ const MedicineStocks = ({ onAddMedicine, onUpdateMedicine, onDeleteMedicine, med
               disabled={isSearching || !searchTerm.trim()}
               title="Search medicines"
             >
-              {isSearching ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>}
+              {isSearching ? <i className="fas fa-spinner fa-spin"></i> : (
+                <span className={styles.searchBtnContent}>
+                  <i className="fas fa-search"></i>
+                  <span className={styles.searchBtnText}>Search</span>
+                </span>
+              )}
             </button>
           </form>
           <select 

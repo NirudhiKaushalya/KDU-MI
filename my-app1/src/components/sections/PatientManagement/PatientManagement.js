@@ -4,12 +4,14 @@ import EditPatientModal from '../../modals/EditPatientModal/EditPatientModal';
 import DeletionRequestModal from '../../modals/DeletionRequestModal/DeletionRequestModal';
 import styles from './PatientManagement.module.scss';
 
-const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, patients = [] }) => {
+const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, patients = [], onRefreshPatients, onSearchPatients, onFilterPatients }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeletionRequestModal, setShowDeletionRequestModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState({
     condition: 'Any',
     startDate: '',
@@ -19,8 +21,41 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
     indexNumber: ''
   });
 
-  const handleApplyFilters = (filters) => {
+  const handleApplyFilters = async (filters) => {
     setAppliedFilters(filters);
+    
+    // Check if any filter criteria is provided
+    const hasFilters = filters.indexNumber || 
+                       (filters.condition && filters.condition !== 'Any') || 
+                       filters.startDate || 
+                       filters.endDate || 
+                       filters.minAge || 
+                       filters.maxAge;
+    
+    // If filters are provided, search the database for past records
+    if (hasFilters && onFilterPatients) {
+      setIsFiltering(true);
+      try {
+        await onFilterPatients(filters);
+      } finally {
+        setIsFiltering(false);
+      }
+    }
+  };
+
+  const handleClearFilters = () => {
+    setAppliedFilters({
+      condition: 'Any',
+      startDate: '',
+      endDate: '',
+      minAge: '',
+      maxAge: '',
+      indexNumber: ''
+    });
+    // Clear the results and go back to session view
+    if (onRefreshPatients) {
+      onRefreshPatients();
+    }
   };
 
   const handleUpdate = (patientId) => {
@@ -52,6 +87,28 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
   const handleDeletionRequestSent = () => {
     // Optionally refresh the patient list or show a success message
     console.log('Deletion request sent successfully');
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) {
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      await onSearchPatients(searchTerm.trim());
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Error searching patients. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    onRefreshPatients(); // Clear search results and go back to session-based view
   };
 
   const handleUpdatePatient = (updatedPatient) => {
@@ -158,36 +215,61 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>Patient Records</h3>
-          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onAddPatient}>
-            <i className="fas fa-plus"></i> Admit Patient
-          </button>
+          <div className={styles.headerButtons}>
+            {onRefreshPatients && (
+              <button className={`${styles.btn} ${styles.btnSecondary}`} onClick={onRefreshPatients} title="Clear search results">
+                <i className="fas fa-sync-alt"></i> Refresh
+              </button>
+            )}
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={onAddPatient}>
+              <i className="fas fa-plus"></i> Admit Patient
+            </button>
+          </div>
         </div>
         
         <div className={`${styles.flexBetween} ${styles.mb20}`}>
-          <div className={styles.searchBar}>
-            <i className="fas fa-search"></i>
+          <form className={styles.searchBar} onSubmit={handleSearch}>
             <input 
               type="text" 
-              placeholder="Search by ID, index, condition, reason, or role..." 
+              placeholder="Search past records by index number..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
               <button 
+                type="button"
                 className={styles.clearSearch}
-                onClick={() => setSearchTerm('')}
+                onClick={handleClearSearch}
                 title="Clear search"
               >
                 <i className="fas fa-times"></i>
               </button>
             )}
-          </div>
+            <button 
+              type="submit" 
+              className={styles.searchButton}
+              disabled={isSearching || !searchTerm.trim()}
+              title="Search patient records"
+            >
+              {isSearching ? <i className="fas fa-spinner fa-spin"></i> : (
+                <span className={styles.searchBtnContent}>
+                  <i className="fas fa-search"></i>
+                  <span className={styles.searchBtnText}>Search</span>
+                </span>
+              )}
+            </button>
+          </form>
           <button 
             className={`${styles.btn} ${styles.btnSecondary}`}
             onClick={() => setShowFilterModal(true)}
+            disabled={isFiltering}
             style={{ width: '200px' }}
           >
-            <i className="fas fa-filter"></i> {getFilterButtonText()}
+            {isFiltering ? (
+              <><i className="fas fa-spinner fa-spin"></i> Filtering...</>
+            ) : (
+              <><i className="fas fa-filter"></i> {getFilterButtonText()}</>
+            )}
           </button>
         </div>
 
@@ -250,8 +332,9 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
         ) : (
           <div className="empty-state">
             <i className="fas fa-user-injured"></i>
-            <h3>No patient records found</h3>
-            <p>Try changing your search or filter criteria</p>
+            <h3>No patient records</h3>
+            <p>Patients admitted during this session will appear here.<br/>
+            Search by index number to retrieve past patient records.</p>
             <button className={`${styles.btn} ${styles.btnPrimary} mt-20`} onClick={onAddPatient}>
               <i className="fas fa-plus"></i> Admit Patient
             </button>
@@ -263,6 +346,7 @@ const PatientManagement = ({ onAddPatient, onUpdatePatient, onDeletePatient, pat
         <PatientFilterModal 
           onClose={() => setShowFilterModal(false)}
           onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
         />
       )}
 

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import styles from './Dashboard.module.scss';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { useActivities } from '../../../contexts/ActivityContext';
@@ -8,54 +9,100 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
   const { activities, clearActivities } = useActivities();
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [activityFilter, setActivityFilter] = useState('all');
-  
-  // Calculate statistics
-  const totalPatients = patients.length;
-  const totalMedicines = medicines.length;
-  
-  // Calculate low stock items
-  const lowStockItems = medicines.filter(medicine => {
-    const currentStock = parseInt(medicine.quantity) || 0;
-    const threshold = parseInt(medicine.lowStockThreshold) || 0;
-    return currentStock <= threshold;
-  }).length;
-  
-  // Calculate expiring soon items
-  const expiringSoonItems = medicines.filter(medicine => {
-    const expiryDate = new Date(medicine.expiryDate);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiry <= (settings?.expiryAlertDays || 30) && daysUntilExpiry >= 0;
-  }).length;
+  const [medicineStats, setMedicineStats] = useState({
+    total: 0,
+    lowStock: 0,
+    expiringSoon: 0
+  });
+  const [patientStats, setPatientStats] = useState({
+    total: 0,
+    uniquePatients: 0
+  });
+
+  useEffect(() => {
+    const fetchMedicineStats = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/medicines/stats');
+        console.log('Medicine stats response:', response.data); // Debug log
+        setMedicineStats({
+          total: response.data.total || 0,
+          lowStock: response.data.lowStock || 0,
+          expiringSoon: response.data.expiringSoon || 0
+        });
+      } catch (error) {
+        console.error('Error fetching medicine stats:', error);
+        // Set default values on error
+        setMedicineStats({
+          total: 0,
+          lowStock: 0,
+          expiringSoon: 0
+        });
+      }
+    };
+
+    const fetchPatientStats = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/patient/stats');
+        console.log('Patient stats response:', response.data); // Debug log
+        setPatientStats({
+          total: response.data.total || 0,
+          uniquePatients: response.data.uniquePatients || 0
+        });
+      } catch (error) {
+        console.error('Error fetching patient stats:', error);
+        // Set default values on error
+        setPatientStats({
+          total: 0,
+          uniquePatients: 0
+        });
+      }
+    };
+    
+    // Initial fetch
+    fetchMedicineStats();
+    fetchPatientStats();
+    
+    // Set up polling to update stats every 30 seconds (more frequent for testing)
+    const interval = setInterval(() => {
+      fetchMedicineStats();
+      fetchPatientStats();
+    }, 30 * 1000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, []); // Empty dependency array means this runs once when component mounts
+
+  // Medicine stats are now handled by useEffect and medicineStats state
+  // Patient stats are fetched from database (uniquePatients and total records)
 
   const stats = [
     {
       title: 'Total Patients',
-      value: totalPatients.toString(),
+      value: patientStats.uniquePatients.toString(),
       icon: '👤',
       iconClass: styles.iconLightBlue,
-      description: totalPatients === 0 ? 'No patients registered' : `${totalPatients} patient${totalPatients !== 1 ? 's' : ''} registered`
+      description: patientStats.uniquePatients === 0 ? 'No patients registered' : `${patientStats.total} patient record${patientStats.total !== 1 ? 's' : ''} in system`
     },
     {
       title: 'Total Medicines',
-      value: totalMedicines.toString(),
+      value: medicineStats.total.toString(),
       icon: '💊',
       iconClass: styles.iconBlue,
-      description: totalMedicines === 0 ? 'No medicines in inventory' : `${totalMedicines} medicine${totalMedicines !== 1 ? 's' : ''} in inventory`
+      description: medicineStats.total === 0 ? 'No medicines in inventory' : `${medicineStats.total} medicine${medicineStats.total !== 1 ? 's' : ''} in inventory`
     },
     {
       title: 'Low Stock Items',
-      value: lowStockItems.toString(),
+      value: medicineStats.lowStock.toString(),
       icon: '⚠️',
       iconClass: styles.iconOrange,
-      description: lowStockItems === 0 ? 'All medicines well stocked' : `${lowStockItems} medicine${lowStockItems !== 1 ? 's' : ''} need restocking`
+      description: medicineStats.lowStock === 0 ? 'All medicines well stocked' : `${medicineStats.lowStock} medicine${medicineStats.lowStock !== 1 ? 's' : ''} need restocking`
     },
     {
       title: 'Expiring Soon',
-      value: expiringSoonItems.toString(),
+      value: medicineStats.expiringSoon.toString(),
       icon: '📅',
       iconClass: styles.iconRed,
-      description: expiringSoonItems === 0 ? 'No medicines expiring soon' : `${expiringSoonItems} medicine${expiringSoonItems !== 1 ? 's' : ''} expiring within ${settings?.expiryAlertDays || 30} days`
+      description: medicineStats.expiringSoon === 0 ? 'No medicines expiring soon' : `${medicineStats.expiringSoon} medicine${medicineStats.expiringSoon !== 1 ? 's' : ''} expiring within ${settings?.expiryAlertDays || 30} days`
     }
   ];
 
@@ -99,7 +146,7 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
   return (
     <div className={styles.dashboard}>
       <div className={styles.welcomeMessage}>
-        <h1>Welcome back to KDU Medical Inspection Room management system</h1>
+        <h1>Welcome Back To KDU Medical Inspection Room Management System</h1>
       </div>
       
       <div className={styles.dashboardCards}>

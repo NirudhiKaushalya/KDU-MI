@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from './PatientFilterModal.module.scss';
 
-const PatientFilterModal = ({ onClose, onApplyFilters }) => {
+const PatientFilterModal = ({ onClose, onApplyFilters, onClearFilters }) => {
   const [filters, setFilters] = useState({
     condition: 'Any',
     startDate: '',
@@ -27,14 +27,21 @@ const PatientFilterModal = ({ onClose, onApplyFilters }) => {
   };
 
   const handleClear = () => {
-    setFilters({
+    const clearedFilters = {
       condition: 'Any',
       startDate: '',
       endDate: '',
       minAge: '',
       maxAge: '',
       indexNumber: ''
-    });
+    };
+    setFilters(clearedFilters);
+    
+    // Also notify parent to clear database search results
+    if (onClearFilters) {
+      onClearFilters();
+    }
+    onClose();
   };
 
   const getAppliedFiltersText = () => {

@@ -13,7 +13,7 @@
     .dark-mode & {
       background: $card-dark;
       box-shadow: $shadow-dark;
-      border-color: $border-dark;
+      border-color: $border-dark
     }
   }
 }
@@ -115,6 +115,7 @@
     outline: none;
     padding: 8px;
     width: 100%;
+    padding-right: 140px; // make room for clear + search buttons
     font-size: 16px;
     background: transparent;
 
@@ -123,9 +124,9 @@
     }
   }
 
+  // left icon removed; search icon moved to button
   i {
     color: $text-secondary;
-    margin-right: 10px;
   }
 
   .clearSearch {
@@ -156,15 +157,19 @@
 
   .searchButton {
     position: absolute;
-    right: 45px;
-    background: $primary;
+    right: 12px;
+    background: linear-gradient(180deg, $primary, $primary-dark);
     border: none;
     color: white;
     cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
+    padding: 8px 14px;
+    border-radius: 999px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
     font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 18px rgba(44,90,160,0.12);
 
     &:hover:not(:disabled) {
       background: $primary-dark;
@@ -180,6 +185,18 @@
         background: #666;
       }
     }
+  }
+
+  .searchBtnContent {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .searchBtnText {
+    display: inline-block;
+    font-weight: 600;
+    letter-spacing: 0.2px;
   }
 }
 

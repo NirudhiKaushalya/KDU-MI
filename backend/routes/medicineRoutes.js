@@ -8,13 +8,15 @@ const {
     updateMedicine,
     deleteMedicine,
     getMedicineByName,
-    searchMedicines
+    searchMedicines,
+    getMedicineStats
   } = require("../controllers/medicineController");
 
 
 router.post("/",createMedicine);  //create
 router.get("/",getMedicines);     //Read recent medicines (last 7 days by default)
 router.get("/all",getAllMedicines);     //Read all medicines
+router.get("/stats", getMedicineStats);   //Get medicine statistics
 router.get("/search", searchMedicines);  //Search medicines - MUST be before /:id
 router.get("/name/:medicineName", getMedicineByName);  //Read by name
 router.get("/:id", getMedicineById);  //Read one - MUST be after specific routes
