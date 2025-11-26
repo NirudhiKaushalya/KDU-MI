@@ -8,6 +8,7 @@ import UserHeader from './components/common/UserHeader/UserHeader';
 import Login from './components/auth/Login/Login';
 import Registration from './components/auth/Registration/Registration';
 import ForgotPassword from './components/auth/ForgotPassword/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword/ResetPassword';
 import Dashboard from './components/sections/Dashboard/Dashboard';
 import UserDashboard from './components/sections/UserDashboard/UserDashboard';
 import UserNotifications from './components/sections/UserNotifications/UserNotifications';
@@ -37,6 +38,8 @@ const AppContent = () => {
   const [userData, setUserData] = useState(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetToken, setResetToken] = useState(null);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [previousSection, setPreviousSection] = useState('dashboard');
   const [showAdmitPatientModal, setShowAdmitPatientModal] = useState(false);
@@ -67,6 +70,26 @@ const AppContent = () => {
     } else {
       return 'In Stock';
     }
+  };
+
+  // Check for reset password token in URL on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/reset-password/')) {
+      const token = path.split('/reset-password/')[1];
+      if (token) {
+        setResetToken(token);
+        setShowResetPassword(true);
+      }
+    }
+  }, []);
+
+  // Handle back to login from reset password
+  const handleResetPasswordComplete = () => {
+    setShowResetPassword(false);
+    setResetToken(null);
+    // Clear the URL
+    window.history.pushState({}, '', '/');
   };
 
   // Load data from database on app start
@@ -1235,7 +1258,12 @@ const AppContent = () => {
   return (
     <div className="app">
       {!isAuthenticated ? (
-        showRegistration ? (
+        showResetPassword ? (
+          <ResetPassword 
+            token={resetToken}
+            onBackToLogin={handleResetPasswordComplete}
+          />
+        ) : showRegistration ? (
           <Registration 
             onBackToLogin={handleBackToLogin}
             onRegister={handleRegistration}

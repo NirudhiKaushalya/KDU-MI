@@ -23,7 +23,21 @@ Create a `.env` file in the backend directory:
 MONGO_URI=mongodb://localhost:27017/kdu-medical-unit
 PORT=8000
 JWT_SECRET=your-super-secret-jwt-key-here
+
+# Email Configuration (for Password Reset feature)
+EMAIL_USER=your-gmail-address@gmail.com
+EMAIL_PASS=your-gmail-app-password
 ```
+
+#### Gmail App Password Setup (Required for Password Reset)
+1. Go to your Google Account → Security
+2. Enable 2-Step Verification if not already enabled
+3. Go to "App passwords" (search for it in Google Account settings)
+4. Select "Mail" and "Windows Computer" (or your device)
+5. Click "Generate" and copy the 16-character password
+6. Use this password as `EMAIL_PASS` in your `.env` file
+
+**Note**: Regular Gmail passwords won't work. You MUST use an App Password.
 
 ### 4. Start MongoDB
 Make sure MongoDB is running on your machine:

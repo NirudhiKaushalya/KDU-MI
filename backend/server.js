@@ -55,7 +55,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/bmi", bmiRoutes);
 
 // Set default environment variables if not provided
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/kdu-medical-unit";
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://gonapinuwalanirudhi_db_user:C4CpHkdXcM2kj3GT@cluster0.0nbpffx.mongodb.net/kdu-medical-unit?retryWrites=true&w=majority";
 const PORT = process.env.PORT || 8000;
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-here";
 

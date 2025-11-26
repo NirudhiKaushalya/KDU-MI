@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const path = require("path");
-const { registerUser, loginUser, getUserByEmail, getUserByIndexNo, updateUser, getAllUsers } = require("../controllers/authController");
+const { registerUser, loginUser, getUserByEmail, getUserByIndexNo, updateUser, getAllUsers, forgotPassword, resetPassword, verifyResetToken } = require("../controllers/authController");
 const multer = require("multer");
 
 // Configure multer for user photo uploads with disk storage
@@ -62,5 +62,14 @@ router.put("/update/:id", updateUser);
 
 // Get all registered users (for admin dashboard)
 router.get("/all", getAllUsers);
+
+// Forgot password - send reset email
+router.post("/forgot-password", forgotPassword);
+
+// Verify reset token
+router.get("/reset-password/:token", verifyResetToken);
+
+// Reset password with token
+router.post("/reset-password/:token", resetPassword);
 
 module.exports = router;

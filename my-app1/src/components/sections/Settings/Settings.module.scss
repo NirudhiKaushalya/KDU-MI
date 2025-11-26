@@ -75,10 +75,16 @@
   font-size: 20px;
   font-weight: bold;
   color: #333;
-  margin: 0 0 20px 0;
+  margin: 0 0 10px 0;
   padding-bottom: 8px;
   border-bottom: 2px solid #3498db;
   width: fit-content;
+}
+
+.sectionDescription {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px 0;
 }
 
 .settingsGroup {
@@ -212,14 +218,20 @@
   font-weight: 500;
   transition: all 0.2s ease;
   
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: #229954;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
   }
   
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
   }
 }
 
@@ -237,19 +249,35 @@
   font-weight: 500;
   transition: all 0.2s ease;
   
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: #2c3e50;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(52, 73, 94, 0.3);
   }
   
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
   }
 }
 
 .buttonIcon {
   font-size: 16px;
+}
+
+.backupNote {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+  padding: 10px 14px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
 }
 
 // Responsive design

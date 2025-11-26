@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import styles from './ForgotPassword.module.scss';
 
 const ForgotPassword = ({ onBackToLogin }) => {
@@ -28,14 +29,15 @@ const ForgotPassword = ({ onBackToLogin }) => {
     setIsLoading(true);
     setError('');
 
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // For demo purposes, always show success
+      // Call backend API to send reset email
+      const response = await axios.post('http://localhost:8000/api/user/forgot-password', { email });
+      console.log('Forgot password response:', response.data);
       setIsSubmitted(true);
     } catch (err) {
-      setError('Failed to send reset email. Please try again.');
+      console.error('Forgot password error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to send reset email. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
