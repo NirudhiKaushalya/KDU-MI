@@ -429,20 +429,6 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
                   <span className={styles.detailValue}>{userData.contactNo || 'N/A'}</span>
                 )}
               </div>
-
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Additional Notes:</span>
-                {isEditing ? (
-                  <textarea
-                    value={editData.additionalNotes || ''}
-                    onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
-                    className={styles.editTextarea}
-                    placeholder="Enter any additional notes..."
-                  />
-                ) : (
-                  <span className={styles.detailValue}>{userData.additionalNotes || 'None'}</span>
-                )}
-              </div>
             </div>
           </div>
         </div>
