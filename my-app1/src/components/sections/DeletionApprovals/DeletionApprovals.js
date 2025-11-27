@@ -184,9 +184,8 @@ const DeletionApprovals = ({ onPatientDeleted }) => {
                         <button
                           className={`${styles.actionButton} ${styles.confirmButton}`}
                           onClick={() => {
-                            const reason = prompt('Enter a reason for confirmation (optional):');
-                            if (window.confirm('Are you sure you want to permanently delete this medical record? This action cannot be undone.')) {
-                              handleAdminConfirm(request._id, 'confirm', reason || '');
+                            if (window.confirm('Do you want to delete this record? This action cannot be undone.')) {
+                              handleAdminConfirm(request._id, 'confirm', '');
                             }
                           }}
                         >
@@ -196,9 +195,8 @@ const DeletionApprovals = ({ onPatientDeleted }) => {
                         <button
                           className={`${styles.actionButton} ${styles.rejectButton}`}
                           onClick={() => {
-                            const reason = prompt('Enter a reason for cancellation:');
-                            if (reason !== null) {
-                              handleAdminConfirm(request._id, 'reject', reason);
+                            if (window.confirm('Do you want to cancel this deletion request?')) {
+                              handleAdminConfirm(request._id, 'reject', '');
                             }
                           }}
                         >

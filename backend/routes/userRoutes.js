@@ -57,8 +57,22 @@ router.get("/getByEmail/:email", getUserByEmail);
 // Get user by index number
 router.get("/getByIndexNo/:indexNo", getUserByIndexNo);
 
-// Update user by ID
-router.put("/update/:id", updateUser);
+// Update user by ID (with photo upload support)
+router.put("/update/:id", (req, res, next) => {
+  photoUpload.single('photo')(req, res, (err) => {
+    if (err) {
+      // Handle multer errors
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'Photo file size too large. Maximum size is 2MB.' });
+      }
+      if (err.message.includes('Only image files')) {
+        return res.status(400).json({ message: 'Only image files are allowed for profile photos.' });
+      }
+      return res.status(400).json({ message: 'Photo upload error: ' + err.message });
+    }
+    next();
+  });
+}, updateUser);
 
 // Get all registered users (for admin dashboard)
 router.get("/all", getAllUsers);

@@ -233,12 +233,31 @@ exports.getUserByIndexNo = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = { ...req.body };
+
+    console.log('Update user - req.file:', req.file);
+    console.log('Update user - req.body:', req.body);
 
     // If password is being updated, hash it
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
+
+    // Handle photo upload if a new photo was provided
+    if (req.file && req.file.mimetype.startsWith('image/')) {
+      updateData.photoData = {
+        name: req.file.originalname,
+        size: req.file.size,
+        type: req.file.mimetype,
+        path: req.file.path,
+        filename: req.file.filename
+      };
+      console.log('Photo uploaded via multer:', updateData.photoData);
+    }
+
+    // Remove fields that shouldn't be updated directly
+    delete updateData.photoFile;
+    delete updateData.photoPreview;
 
     const updatedUser = await User.findByIdAndUpdate(
       id,
@@ -266,6 +285,7 @@ exports.updateUser = async (req, res) => {
       photoData: updatedUser.photoData
     });
   } catch (error) {
+    console.error('Update user error:', error);
     res.status(500).json({ message: error.message });
   }
 };

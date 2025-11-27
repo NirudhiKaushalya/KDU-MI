@@ -278,10 +278,6 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
     doc.save(fileName);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -453,10 +449,6 @@ const ReportViewerModal = ({ isOpen, onClose, report, medicines = [], patients =
             <button className={styles.downloadButton} onClick={handleDownload}>
               <i className="fas fa-download"></i>
               Download PDF
-            </button>
-            <button className={styles.printButton} onClick={handlePrint}>
-              <i className="fas fa-print"></i>
-              Print Report
             </button>
           </div>
         </div>
