@@ -321,6 +321,17 @@ exports.forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "No account found with that email address" });
     }
 
+    // Check if email credentials are configured
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+
+    if (!emailUser || !emailPass || emailUser === 'your-email@gmail.com') {
+      console.error('Email credentials not configured. Please set EMAIL_USER and EMAIL_PASS in .env file');
+      return res.status(500).json({ 
+        message: "Email service not configured. Please contact administrator." 
+      });
+    }
+
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -330,22 +341,25 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Create email transporter
-    // Configure with your email service (Gmail, SendGrid, etc.)
+    // Create email transporter using Gmail
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER || 'your-email@gmail.com',
-        pass: process.env.EMAIL_PASS || 'your-app-password'
+        user: emailUser,
+        pass: emailPass
       }
     });
+
+    // Verify transporter connection
+    await transporter.verify();
+    console.log('Email transporter verified successfully');
 
     // Reset URL - points to frontend reset page
     const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
 
     // Email content
     const mailOptions = {
-      from: '"KDU Medical Unit" <noreply@kdu-medical.com>',
+      from: `"KDU Medical Unit" <${emailUser}>`,
       to: user.email,
       subject: 'Password Reset Request - KDU Medical Unit',
       html: `
@@ -373,15 +387,29 @@ exports.forgotPassword = async (req, res) => {
     };
 
     // Send email
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Password reset email sent:', info.messageId);
 
     res.status(200).json({ 
-      message: "Password reset email sent successfully",
+      message: "Password reset email sent successfully! Please check your inbox.",
       email: user.email 
     });
 
   } catch (error) {
     console.error('Forgot password error:', error);
+    
+    // Provide more specific error messages
+    if (error.code === 'EAUTH') {
+      return res.status(500).json({ 
+        message: "Email authentication failed. Please check email credentials." 
+      });
+    }
+    if (error.code === 'ESOCKET') {
+      return res.status(500).json({ 
+        message: "Could not connect to email server. Please try again later." 
+      });
+    }
+    
     res.status(500).json({ message: "Error sending reset email. Please try again later." });
   }
 };

@@ -1,4 +1,11 @@
 require("dotenv").config();//load env very first
+
+// Debug: Check if email env variables are loaded
+console.log('=== Environment Variables Check ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ? 'Configured ✓' : 'NOT SET ✗');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'Configured ✓' : 'NOT SET ✗');
+console.log('===================================');
+
 const express = require("express");//hadle server and APIs paths
 const mongoose = require("mongoose");//connect MD manage to schemas and models
 const cors = require("cors");//allow APIs to access different frontend
