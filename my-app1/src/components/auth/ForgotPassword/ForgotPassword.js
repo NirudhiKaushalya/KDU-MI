@@ -43,11 +43,6 @@ const ForgotPassword = ({ onBackToLogin }) => {
     }
   };
 
-  const handleResendEmail = () => {
-    setIsSubmitted(false);
-    setEmail('');
-  };
-
   return (
     <div className={styles.forgotPasswordContainer}>
       <div className={styles.forgotPasswordCard}>
@@ -107,20 +102,12 @@ const ForgotPassword = ({ onBackToLogin }) => {
             <p>We've sent a password reset link to <strong>{email}</strong></p>
             <p className={styles.checkEmail}>Please check your email and follow the instructions to reset your password.</p>
             
-            <div className={styles.actionButtons}>
-              <button 
-                className={styles.resendButton}
-                onClick={handleResendEmail}
-              >
-                Send to Different Email
-              </button>
-              <button 
-                className={styles.backToLoginButton}
-                onClick={onBackToLogin}
-              >
-                Back to Login
-              </button>
-            </div>
+            <button 
+              className={styles.backToLoginButton}
+              onClick={onBackToLogin}
+            >
+              Back to Login
+            </button>
           </div>
         )}
       </div>
