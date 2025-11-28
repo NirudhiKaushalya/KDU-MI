@@ -27,6 +27,7 @@ const Footer = ({ onSectionChange, userRole = 'user' }) => {
     { name: 'Dashboard', key: 'dashboard' },
     { name: 'Patient Management', key: 'patient-management' }, 
     { name: 'Medicine Stocks', key: 'medicine-stocks' },
+    { name: 'Deletion Approvals', key: 'deletion-approvals' },
     { name: 'Reports', key: 'reports' },
     { name: 'Notifications', key: 'notifications' },
     { name: 'Settings', key: 'settings' }
@@ -85,12 +86,8 @@ const Footer = ({ onSectionChange, userRole = 'user' }) => {
           <h4 className={styles.columnTitle}>Contact</h4>
           <div className={styles.contactInfo}>
             <div className={styles.contactItem}>
-              <span className={styles.contactIcon}>✉️</span>
-              <span className={styles.contactText}>kdumedical@gmail.com</span>
-            </div>
-            <div className={styles.contactItem}>
               <span className={styles.contactIcon}>📞</span>
-              <span className={styles.contactText}>+94 11 234 5678</span>
+              <span className={styles.contactText}>KDU Exchange: +94 472 030 800</span>
             </div>
           </div>
         </div>

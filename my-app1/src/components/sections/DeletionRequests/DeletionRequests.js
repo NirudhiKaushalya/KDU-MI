@@ -207,9 +207,8 @@ const DeletionRequests = ({ userData, onPatientDeleted }) => {
                   <div className={styles.recordInfo}>
                     <h4>Medical Record Details:</h4>
                     <div className={styles.recordDetails}>
-                      <span><strong>Condition:</strong> {request.medicalRecordId.medicalCondition || 'N/A'}</span>
-                      <span><strong>Date:</strong> {request.medicalRecordId.consultedDate || 'N/A'}</span>
-                      <span><strong>Time:</strong> {request.medicalRecordId.consultedTime || 'N/A'}</span>
+                      <span><strong>Condition:</strong> {request.medicalRecordId.Diagnosis || 'N/A'}</span>
+                      <span><strong>Date:</strong> {request.medicalRecordId.consultedTime || 'N/A'}</span>
                     </div>
                   </div>
                 )}
