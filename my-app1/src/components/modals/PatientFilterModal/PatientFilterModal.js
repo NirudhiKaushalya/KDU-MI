@@ -6,8 +6,6 @@ const PatientFilterModal = ({ onClose, onApplyFilters, onClearFilters }) => {
     condition: 'Any',
     startDate: '',
     endDate: '',
-    minAge: '',
-    maxAge: '',
     indexNumber: ''
   });
 
@@ -31,8 +29,6 @@ const PatientFilterModal = ({ onClose, onApplyFilters, onClearFilters }) => {
       condition: 'Any',
       startDate: '',
       endDate: '',
-      minAge: '',
-      maxAge: '',
       indexNumber: ''
     };
     setFilters(clearedFilters);
@@ -109,36 +105,6 @@ const PatientFilterModal = ({ onClose, onApplyFilters, onClearFilters }) => {
               value={filters.endDate}
               onChange={handleChange}
             />
-          </div>
-        </div>
-
-        <div className={styles.formGroup}>
-          <label htmlFor="ageRange">Age Range</label>
-          <div className={styles.ageRange}>
-            <div className={styles.ageInput}>
-              <input
-                type="number"
-                name="minAge"
-                className={styles.formControl}
-                placeholder="Min"
-                value={filters.minAge}
-                onChange={handleChange}
-                min="0"
-                max="150"
-              />
-            </div>
-            <div className={styles.ageInput}>
-              <input
-                type="number"
-                name="maxAge"
-                className={styles.formControl}
-                placeholder="Max"
-                value={filters.maxAge}
-                onChange={handleChange}
-                min="0"
-                max="150"
-              />
-            </div>
           </div>
         </div>
 

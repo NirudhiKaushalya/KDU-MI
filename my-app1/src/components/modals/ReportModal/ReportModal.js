@@ -217,10 +217,11 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
       case 'Low Stock Report':
         // Use allMedicines from database
         let lowStockMedicines = allMedicines.filter(med => {
-          // Check if medicine has low stock based on quantity vs threshold
-          const hasLowStock = med.lowStockThreshold && 
-                             med.quantity && 
-                             parseInt(med.quantity) <= parseInt(med.lowStockThreshold);
+          const quantity = parseInt(med.quantity) || 0;
+          const threshold = parseInt(med.lowStockThreshold) || 10;
+          
+          // Check if medicine has low stock or out of stock based on quantity vs threshold
+          const hasLowStock = quantity <= threshold;
           
           // Also check stock level if available
           const isLowStockLevel = med.stockLevel === 'Low Stock' || med.stockLevel === 'Out of Stock';
@@ -239,9 +240,24 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           });
         }
 
-        // Apply stock level filter if selected
+        // Apply stock level filter if selected (calculate dynamically based on quantity)
         if (filters.status) {
-          lowStockMedicines = lowStockMedicines.filter(med => med.stockLevel === filters.status);
+          lowStockMedicines = lowStockMedicines.filter(med => {
+            const quantity = parseInt(med.quantity) || 0;
+            const threshold = parseInt(med.lowStockThreshold) || 10;
+            
+            // Determine actual stock level based on quantity
+            let actualStockLevel;
+            if (quantity === 0) {
+              actualStockLevel = 'Out of Stock';
+            } else if (quantity <= threshold) {
+              actualStockLevel = 'Low Stock';
+            } else {
+              actualStockLevel = 'In Stock';
+            }
+            
+            return actualStockLevel === filters.status;
+          });
         }
 
         return {
@@ -260,6 +276,11 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
             const today = new Date();
             const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
 
+            // Handle "expired" filter - show medicines that have already expired
+            if (filters.status === 'expired') {
+              return daysUntilExpiry < 0;
+            }
+
             // Use the dropdown filter value if selected, otherwise show all future expiry dates
             // filters.status contains: "" (All), "30", "60", or "90"
             let alertWindowDays;
@@ -267,16 +288,12 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
               // User selected a specific filter (30, 60, or 90 days)
               alertWindowDays = parseInt(filters.status);
             } else {
-              // "All" selected - show all medicines with future expiry dates (within 365 days)
-              alertWindowDays = 365;
+              // "All" selected - show all medicines (including expired)
+              return true;
             }
 
-            // Optionally apply date range if provided
-            const startOk = !dateRange.startDate || expiryDate >= new Date(dateRange.startDate);
-            const endOk = !dateRange.endDate || expiryDate <= new Date(dateRange.endDate);
-
             // Show medicines expiring within the selected window (and not already expired)
-            return daysUntilExpiry >= 0 && daysUntilExpiry <= alertWindowDays && startOk && endOk;
+            return daysUntilExpiry >= 0 && daysUntilExpiry <= alertWindowDays;
           }),
           columns: ['Name', 'Category', 'Quantity', 'Expiry Date', 'Days Until Expiry']
         };
@@ -449,6 +466,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
               className={styles.filterInput}
             >
               <option value="">All</option>
+              <option value="expired">Expired</option>
               <option value="30">Within 30 days</option>
               <option value="60">Within 60 days</option>
               <option value="90">Within 90 days</option>
@@ -478,28 +496,30 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           <div className={styles.reportFilters}>
             <h3>Report Filters</h3>
             
-            <div className={styles.dateRange}>
-              <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>Start Date</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={dateRange.startDate}
-                  onChange={handleInputChange}
-                  className={styles.filterInput}
-                />
+            {reportType !== 'Expiry Report' && (
+              <div className={styles.dateRange}>
+                <div className={styles.filterGroup}>
+                  <label className={styles.filterLabel}>Start Date</label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={dateRange.startDate}
+                    onChange={handleInputChange}
+                    className={styles.filterInput}
+                  />
+                </div>
+                <div className={styles.filterGroup}>
+                  <label className={styles.filterLabel}>End Date</label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={dateRange.endDate}
+                    onChange={handleInputChange}
+                    className={styles.filterInput}
+                  />
+                </div>
               </div>
-              <div className={styles.filterGroup}>
-                <label className={styles.filterLabel}>End Date</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={dateRange.endDate}
-                  onChange={handleInputChange}
-                  className={styles.filterInput}
-                />
-              </div>
-            </div>
+            )}
 
             {getFilterFields()}
           </div>

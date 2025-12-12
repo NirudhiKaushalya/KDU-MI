@@ -13,7 +13,13 @@ exports.createMedicine = async (req, res) => {
         // Set stock level based on quantity and threshold
         const quantity = parseInt(medicineData.quantity) || 0;
         const threshold = parseInt(medicineData.lowStockThreshold) || 10;
-        medicineData.stockLevel = quantity <= threshold ? 'Low Stock' : 'In Stock';
+        if (quantity === 0) {
+            medicineData.stockLevel = 'Out of Stock';
+        } else if (quantity <= threshold) {
+            medicineData.stockLevel = 'Low Stock';
+        } else {
+            medicineData.stockLevel = 'In Stock';
+        }
 
         const medicine = new Medicine(medicineData);
         await medicine.save();
@@ -83,7 +89,13 @@ exports.updateMedicine = async (req, res) => {
         if (updateData.quantity !== undefined || updateData.lowStockThreshold !== undefined) {
             const quantity = parseInt(updateData.quantity) || 0;
             const threshold = parseInt(updateData.lowStockThreshold) || 10;
-            updateData.stockLevel = quantity <= threshold ? 'Low Stock' : 'In Stock';
+            if (quantity === 0) {
+                updateData.stockLevel = 'Out of Stock';
+            } else if (quantity <= threshold) {
+                updateData.stockLevel = 'Low Stock';
+            } else {
+                updateData.stockLevel = 'In Stock';
+            }
         }
 
         const updated = await Medicine.findByIdAndUpdate(
