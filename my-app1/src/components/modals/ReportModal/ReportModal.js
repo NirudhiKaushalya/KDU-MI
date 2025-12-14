@@ -229,17 +229,6 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           return hasLowStock || isLowStockLevel;
         });
 
-        // Filter by date range (using createdAt - when medicine was added)
-        if (dateRange.startDate || dateRange.endDate) {
-          lowStockMedicines = lowStockMedicines.filter(medicine => {
-            const createdDate = medicine.createdAt ? new Date(medicine.createdAt).toISOString().split('T')[0] : '';
-            
-            if (dateRange.startDate && createdDate < dateRange.startDate) return false;
-            if (dateRange.endDate && createdDate > dateRange.endDate) return false;
-            return true;
-          });
-        }
-
         // Apply stock level filter if selected (calculate dynamically based on quantity)
         if (filters.status) {
           lowStockMedicines = lowStockMedicines.filter(med => {
@@ -496,7 +485,7 @@ const ReportModal = ({ isOpen, onClose, reportType, medicines = [], patients = [
           <div className={styles.reportFilters}>
             <h3>Report Filters</h3>
             
-            {reportType !== 'Expiry Report' && (
+            {reportType !== 'Expiry Report' && reportType !== 'Low Stock Report' && (
               <div className={styles.dateRange}>
                 <div className={styles.filterGroup}>
                   <label className={styles.filterLabel}>Start Date</label>

@@ -15,7 +15,7 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
   });
 
   const [medicineSearch, setMedicineSearch] = useState('');
-  const [userValidation, setUserValidation] = useState({ status: null, message: '' });
+  const [userValidation, setUserValidation] = useState({ status: null, message: '', role: '' });
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -103,22 +103,24 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
     if (field === 'indexNo' && value.trim()) {
       validateUser(value.trim());
     } else if (field === 'indexNo' && !value.trim()) {
-      setUserValidation({ status: null, message: '' });
+      setUserValidation({ status: null, message: '', role: '' });
     }
   };
 
   const validateUser = async (indexNo) => {
     try {
-      setUserValidation({ status: 'validating', message: 'Validating user...' });
+      setUserValidation({ status: 'validating', message: 'Validating user...', role: '' });
       const response = await axios.get(`http://localhost:8000/api/user/getByIndexNo/${indexNo}`);
       setUserValidation({ 
         status: 'valid', 
-        message: `✓ User found: ${response.data.userName}` 
+        message: `✓ User found: ${response.data.userName}`,
+        role: response.data.role || ''
       });
     } catch (error) {
       setUserValidation({ 
         status: 'invalid', 
-        message: '✗ User not registered in the system' 
+        message: '✗ User not registered in the system',
+        role: ''
       });
     }
   };
@@ -225,9 +227,14 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
     }
     
     if (onAdmitPatient) {
-      console.log('Admitting patient with formData:', formData);
-      console.log('Lab reports in formData:', formData.labReports);
-      onAdmitPatient(formData);
+      // Include the user's role from validation
+      const patientDataWithRole = {
+        ...formData,
+        role: userValidation.role || ''
+      };
+      console.log('Admitting patient with formData:', patientDataWithRole);
+      console.log('Lab reports in formData:', patientDataWithRole.labReports);
+      onAdmitPatient(patientDataWithRole);
     }
     
     // Reset form
@@ -243,7 +250,7 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
     });
     
     // Reset validation state
-    setUserValidation({ status: null, message: '' });
+    setUserValidation({ status: null, message: '', role: '' });
     
     // Clear file input
     const fileInput = document.getElementById('labReports');
@@ -268,7 +275,7 @@ const AdmitPatientModal = ({ isOpen, onClose, onAdmitPatient, medicines = [] }) 
         prescribedMedicines: [],
         additionalNotes: ''
       });
-      setUserValidation({ status: null, message: '' });
+      setUserValidation({ status: null, message: '', role: '' });
       setMedicineSearch('');
       setSearchResults([]);
       setShowDropdown(false);

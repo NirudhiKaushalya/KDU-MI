@@ -28,8 +28,8 @@ const Registration = ({ onBackToLogin, onRegister }) => {
         [name]: value
       };
       
-      // Clear intake field if role changes away from Dayscholar
-      if (name === 'role' && value !== 'Dayscholar') {
+      // Clear intake field if role changes away from Dayscholar or Officer Cadet
+      if (name === 'role' && value !== 'Dayscholar' && value !== 'Officer Cadet') {
         newData.intake = '';
       }
       
@@ -44,8 +44,8 @@ const Registration = ({ onBackToLogin, onRegister }) => {
       }));
     }
     
-    // Clear intake error if role changes away from Dayscholar
-    if (name === 'role' && value !== 'Dayscholar' && errors.intake) {
+    // Clear intake error if role changes away from Dayscholar or Officer Cadet
+    if (name === 'role' && value !== 'Dayscholar' && value !== 'Officer Cadet' && errors.intake) {
       setErrors(prev => ({
         ...prev,
         intake: ''
@@ -143,8 +143,8 @@ const Registration = ({ onBackToLogin, onRegister }) => {
       newErrors.department = 'Department is required';
     }
 
-    if (formData.role === 'Dayscholar' && !formData.intake.trim()) {
-      newErrors.intake = 'Intake is required for Dayscholar';
+    if ((formData.role === 'Dayscholar' || formData.role === 'Officer Cadet') && !formData.intake.trim()) {
+      newErrors.intake = 'Intake is required for Dayscholar and Officer Cadet';
     }
 
     if (!formData.password) {
@@ -412,7 +412,7 @@ const Registration = ({ onBackToLogin, onRegister }) => {
               </div>
             </div>
 
-            {formData.role === 'Dayscholar' && (
+            {(formData.role === 'Dayscholar' || formData.role === 'Officer Cadet') && (
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
                   <label htmlFor="intake" className={styles.inputLabel}>Intake:</label>

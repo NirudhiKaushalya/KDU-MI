@@ -797,7 +797,7 @@ const AppContent = () => {
         indexNo: patientData.indexNo,
         name: `Patient ${patientData.indexNo}`, // Generate name from index number
         condition: patientData.medicalCondition || patientData.condition, // Map medicalCondition to condition
-        role: patientData.role || 'Student', // Default role for admitted patients
+        role: patientData.role || '', // Use role from user registration
         age: patientData.age || null, // No default age
         gender: patientData.gender || null, // No default gender
         // Additional medical record data
