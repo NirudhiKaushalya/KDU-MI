@@ -376,3 +376,27 @@ exports.cleanupOldRequests = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Remove a single deletion request from the list (admin only)
+exports.removeDeletionRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    const deletionRequest = await DeletionRequest.findById(requestId);
+    if (!deletionRequest) {
+      return res.status(404).json({ message: "Deletion request not found" });
+    }
+
+    await DeletionRequest.findByIdAndDelete(requestId);
+
+    console.log(`Removed deletion request: ${requestId}`);
+
+    res.status(200).json({
+      message: "Deletion request removed successfully",
+      requestId: requestId
+    });
+  } catch (error) {
+    console.error('Error removing deletion request:', error);
+    res.status(500).json({ message: error.message });
+  }
+};

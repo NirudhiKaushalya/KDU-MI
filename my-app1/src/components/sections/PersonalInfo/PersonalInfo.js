@@ -92,6 +92,12 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
   };
 
   const handleSaveEdit = async () => {
+    // Validate phone number before saving
+    if (editData.contactNo && !/^\d{10}$/.test(editData.contactNo)) {
+      alert('Contact number must be exactly 10 digits');
+      return;
+    }
+    
     try {
       // If we have real API data, try to save it
       if (userData._id) {
@@ -422,8 +428,14 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
                   <input
                     type="tel"
                     value={editData.contactNo || ''}
-                    onChange={(e) => handleInputChange('contactNo', e.target.value)}
+                    onChange={(e) => {
+                      // Only allow digits and max 10 characters
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      handleInputChange('contactNo', value);
+                    }}
                     className={styles.editInput}
+                    maxLength={10}
+                    placeholder="Enter 10 digit phone number"
                   />
                 ) : (
                   <span className={styles.detailValue}>{userData.contactNo || 'N/A'}</span>

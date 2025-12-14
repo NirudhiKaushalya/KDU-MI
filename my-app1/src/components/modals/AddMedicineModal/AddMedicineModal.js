@@ -34,6 +34,15 @@ const AddMedicineModal = ({ onClose, onAddMedicine }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validate expiry date is in the future
+    const expiryDate = new Date(formData.expiryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (expiryDate <= today) {
+      alert('Expiry date must be a future date');
+      return;
+    }
+    
     // Determine stock level based on quantity
     let stockLevel = 'In Stock';
     if (parseInt(formData.quantity) === 0) {
@@ -178,6 +187,7 @@ const AddMedicineModal = ({ onClose, onAddMedicine }) => {
               className={styles.formControl}
               value={formData.expiryDate}
               onChange={handleChange}
+              min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
               required
             />
           </div>

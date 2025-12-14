@@ -135,6 +135,8 @@ const Registration = ({ onBackToLogin, onRegister }) => {
 
     if (!formData.contactNo.trim()) {
       newErrors.contactNo = 'Contact number is required';
+    } else if (!/^\d{10}$/.test(formData.contactNo.trim())) {
+      newErrors.contactNo = 'Contact number must be exactly 10 digits';
     }
 
     if (!formData.department.trim()) {
@@ -360,9 +362,14 @@ const Registration = ({ onBackToLogin, onRegister }) => {
                   id="contactNo"
                   name="contactNo"
                   value={formData.contactNo}
-                  onChange={handleInputChange}
+                  onChange={(e) => {
+                    // Only allow digits and max 10 characters
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    handleInputChange({ target: { name: 'contactNo', value } });
+                  }}
                   className={`${styles.inputField} ${errors.contactNo ? styles.errorField : ''}`}
-                  placeholder="Enter your phone number"
+                  placeholder="Enter 10 digit phone number"
+                  maxLength={10}
                 />
                 {errors.contactNo && <span className={styles.errorText}>{errors.contactNo}</span>}
               </div>

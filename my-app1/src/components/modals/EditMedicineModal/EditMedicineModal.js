@@ -243,6 +243,7 @@ const EditMedicineModal = ({ isOpen, onClose, medicine, onUpdateMedicine }) => {
                 value={formData.expiryDate}
                 onChange={handleInputChange}
                 className={`${styles.formInput} ${errors.expiryDate ? styles.inputError : ''}`}
+                min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                 required
               />
               {errors.expiryDate && <span className={styles.errorMessage}>{errors.expiryDate}</span>}

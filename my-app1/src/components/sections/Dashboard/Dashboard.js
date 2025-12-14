@@ -23,7 +23,7 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
     const fetchMedicineStats = async () => {
       try {
         const response = await axios.get('http://localhost:8000/api/medicines/stats');
-        console.log('Medicine stats response:', response.data); // Debug log
+        console.log('Medicine stats response:', response.data); 
         setMedicineStats({
           total: response.data.total || 0,
           lowStock: response.data.lowStock || 0,
@@ -62,7 +62,7 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
     fetchMedicineStats();
     fetchPatientStats();
     
-    // Set up polling to update stats every 30 seconds (more frequent for testing)
+    // Set up polling to update stats every 30 seconds
     const interval = setInterval(() => {
       fetchMedicineStats();
       fetchPatientStats();
@@ -70,11 +70,9 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
     
     // Cleanup interval on component unmount
     return () => clearInterval(interval);
-  }, []); // Empty dependency array means this runs once when component mounts
+  }, []); 
 
-  // Medicine stats are now handled by useEffect and medicineStats state
-  // Patient stats are fetched from database (uniquePatients and total records)
-
+  
   const stats = [
     {
       title: 'Total Patients',

@@ -71,6 +71,26 @@ const DeletionApprovals = ({ onPatientDeleted }) => {
     }
   };
 
+  const handleRemoveRequest = async (requestId) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/deletionRequest/remove/${requestId}`);
+      
+      // Refresh data
+      await fetchData();
+      
+      addNotification({
+        type: 'info',
+        icon: '🗑️',
+        title: 'Request Removed',
+        description: `Deletion request has been removed from the list.`,
+        category: 'admin'
+      });
+    } catch (error) {
+      console.error('Error removing deletion request:', error);
+      alert('Failed to remove the request. Please try again.');
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -223,6 +243,7 @@ const DeletionApprovals = ({ onPatientDeleted }) => {
                 <th>Reason</th>
                 <th>Status</th>
                 <th>Completed</th>
+                <th>Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -233,6 +254,19 @@ const DeletionApprovals = ({ onPatientDeleted }) => {
                   <td className={styles.reasonCell}>{request.reason}</td>
                   <td>{getStatusBadge(request.status)}</td>
                   <td>{request.adminConfirmedAt ? formatDate(request.adminConfirmedAt) : '-'}</td>
+                  <td>
+                    <button
+                      className={styles.removeIconButton}
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to remove this request from the list?')) {
+                          handleRemoveRequest(request._id);
+                        }
+                      }}
+                      title="Remove from list"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -43,8 +43,7 @@ exports.registerUser = async (req, res) => {
       };
       console.log('Photo uploaded via multer:', photoData.name, photoData.size, photoData.type, photoData.path);
     }
-    // Note: Removed base64 handling to prevent "Field value too long" errors
-    
+  
     console.log('Registration - Final photoData:', photoData);
 
     const user = await User.create({
@@ -58,7 +57,7 @@ exports.registerUser = async (req, res) => {
       intake,
       department,
       additionalNotes: additionalNotes || '',
-      photoPreview: null, // No longer using base64 preview
+      photoPreview: null, 
       photoData: photoData, // Will be null if no photo uploaded
       password: hashedPassword,
       pdfFile
@@ -259,6 +258,7 @@ exports.updateUser = async (req, res) => {
     delete updateData.photoFile;
     delete updateData.photoPreview;
 
+    //update in db
     const updatedUser = await User.findByIdAndUpdate(
       id,
       updateData,

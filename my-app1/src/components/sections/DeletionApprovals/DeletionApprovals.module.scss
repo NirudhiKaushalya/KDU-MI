@@ -374,6 +374,30 @@
   text-overflow: ellipsis;
 }
 
+.removeIconButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 14px;
+  }
+
+  &:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.1);
+  }
+}
+
 // Responsive design
 @media (max-width: 768px) {
   .deletionApprovals {

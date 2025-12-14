@@ -9,7 +9,8 @@ const {
   getPendingRequestsCount,
   adminConfirmDeletion,
   getPendingAdminConfirmation,
-  cleanupOldRequests
+  cleanupOldRequests,
+  removeDeletionRequest
 } = require("../controllers/deletionRequestController");
 
 // Create a new deletion request (admin only)
@@ -38,6 +39,9 @@ router.get("/pending-count/:indexNo", getPendingRequestsCount);
 
 // Clean up old pending requests (admin only)
 router.delete("/cleanup-old", cleanupOldRequests);
+
+// Remove a single deletion request (admin only)
+router.delete("/remove/:requestId", removeDeletionRequest);
 
 module.exports = router;
 
