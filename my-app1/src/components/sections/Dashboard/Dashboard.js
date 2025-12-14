@@ -239,7 +239,7 @@ const Dashboard = ({ patients = [], medicines = [], onSectionChange }) => {
         ) : (
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon}>📋</span>
-            <h3>No recent activities</h3>
+            <h3>No Recent Activities</h3>
             <p>Activities will appear here once you start using the system.</p>
           </div>
         )}
