@@ -348,7 +348,7 @@ const PersonalInfo = ({ userName, userData: propUserData, onUpdateUserData }) =>
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="other">Prefer not to say</option>
                   </select>
                 ) : (
                   <span className={styles.detailValue}>{userData.gender ? userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1) : 'N/A'}</span>

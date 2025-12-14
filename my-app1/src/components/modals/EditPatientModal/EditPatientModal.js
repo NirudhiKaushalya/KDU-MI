@@ -45,7 +45,7 @@ const EditPatientModal = ({ isOpen, onClose, patient, onUpdatePatient, readOnly 
   }, [patient]);
 
   const conditions = ['Hypertension', 'Diabetes', 'Respiratory', 'Cardiovascular', 'Neurological', 'Other'];
-  const genders = ['Male', 'Female', 'Other'];
+  const genders = ['Male', 'Female', 'Prefer not to say'];
   const roles = ['Dayscholar', 'Boarder', 'Staff', 'Faculty', 'Other'];
 
   const validateForm = () => {
