@@ -33,11 +33,12 @@ const Notifications = () => {
         return styles.iconInfo;
     }
   };
-
+  
+  // Handlers for dismissing and marking notifications as read, Triggered by ❌ button
   const handleDismissNotification = (id) => {
     dismissNotification(id);
   };
-
+  //Marks a notification as read
   const handleMarkAsRead = (id) => {
     markAsRead(id);
   };

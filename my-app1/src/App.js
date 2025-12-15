@@ -1,5 +1,10 @@
+/*React → needed to build components
+useState → manage component state
+useEffect → run side effects (API calls, timers, lifecycle logic)
+axios → make HTTP requests to backend (Node + Express)*/
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+
 import Sidebar from './components/common/Sidebar/Sidebar';
 import Header from './components/common/Header/Header';
 import Footer from './components/common/Footer/Footer';
@@ -28,7 +33,7 @@ import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 import { ActivityProvider, useActivities } from './contexts/ActivityContext';
 import './styles/App.scss';
 
-const AppContent = () => {
+const AppContent = () => {  //Main application content
   const { addNotification, checkStockAlerts, markAllNewAsRead, clearStockAlertsForMedicine, clearExpiryAlertsForMedicine, clearAllNotifications, getNewNotificationsCount, notifications, setNotifications, setUserTypeForNotifications } = useNotifications();
   const { settings } = useSettings();
   const { addActivity } = useActivities();
@@ -36,17 +41,20 @@ const AppContent = () => {
   const [userType, setUserType] = useState(null); // 'admin' or 'user'
   const [userName, setUserName] = useState('');
   const [userData, setUserData] = useState(null);
+
+  //Controls which auth screen is visible
   const [showRegistration, setShowRegistration] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetToken, setResetToken] = useState(null);
+  //Controls which main section is visible
   const [activeSection, setActiveSection] = useState('dashboard');
   const [previousSection, setPreviousSection] = useState('dashboard');
   const [showAdmitPatientModal, setShowAdmitPatientModal] = useState(false);
   const [showAddMedicineModal, setShowAddMedicineModal] = useState(false);
   const [deletionRequestCount, setDeletionRequestCount] = useState(0);
   
-  // Patient data - starts with sample data for testing
+  // Patient data 
   const [patients, setPatients] = useState([]);
 
   // Medical records data - separate from patients, contains detailed medical information
@@ -1401,6 +1409,7 @@ const AppContent = () => {
   );
 };
 
+//This makes: Settings,Notifications,Activities available everywhere in the app.
 function App() {
   return (
     <SettingsProvider>
